@@ -72,11 +72,11 @@ async function loadDataFromSupabase() {
             
         if (bedsError) throw bedsError;
         
-        Object.keys(patients).forEach(k => {
-            patients[k] = null;
-        });
-        
-        if (bedsData) {
+        if (bedsData && bedsData.length > 0) {
+            Object.keys(patients).forEach(k => {
+                patients[k] = null;
+            });
+            
             bedsData.forEach(bed => {
                 if (bed.patient_name || bed.patient_surname) {
                     patients[bed.id] = {
@@ -86,29 +86,79 @@ async function loadDataFromSupabase() {
                     };
                 }
             });
-        }
-        
-        if (patients[activeBedId] !== null) {
-            const { data: measData, error: measError } = await supabaseClient
-                .from('measurements')
-                .select('map, scto2, cox, timestamp_s')
-                .eq('bed_id', activeBedId)
-                .order('timestamp_s', { ascending: true });
-                
-            if (measError) throw measError;
             
-            if (measData) {
-                patients[activeBedId].averages10s = measData.map(m => ({
-                    MAP: m.map,
-                    SctO2: m.scto2,
-                    COx: m.cox,
-                    timestampS: m.timestamp_s
-                }));
+            if (patients[activeBedId] !== null) {
+                const { data: measData, error: measError } = await supabaseClient
+                    .from('measurements')
+                    .select('map, scto2, cox, timestamp_s')
+                    .eq('bed_id', activeBedId)
+                    .order('timestamp_s', { ascending: true });
+                    
+                if (measError) throw measError;
+                
+                if (measData) {
+                    patients[activeBedId].averages10s = measData.map(m => ({
+                        MAP: m.map,
+                        SctO2: m.scto2,
+                        COx: m.cox,
+                        timestampS: m.timestamp_s
+                    }));
+                }
             }
+            
+            renderBedsGrid();
+            loadActivePatient();
+        } else {
+            // Table is empty! Let's seed the 6 beds and migrate any local data
+            console.log("Database beds table is empty. Seeding beds and migrating local data...");
+            
+            // 1. Load from local storage
+            loadFromLocalStorage();
+            
+            // 2. Prepare beds payload
+            const defaultBeds = ['letto_1', 'letto_2', 'letto_3', 'letto_4', 'letto_5', 'letto_6'];
+            const bedsPayload = defaultBeds.map(id => {
+                const localPat = patients[id];
+                return {
+                    id: id,
+                    patient_name: localPat ? localPat.name : null,
+                    patient_surname: localPat ? localPat.surname : null
+                };
+            });
+            
+            // 3. Seed beds table
+            const { error: seedError } = await supabaseClient
+                .from('beds')
+                .insert(bedsPayload);
+                
+            if (seedError) throw seedError;
+            
+            // 4. Seed measurements table for any patient found locally
+            for (const id of defaultBeds) {
+                const localPat = patients[id];
+                if (localPat && localPat.averages10s && localPat.averages10s.length > 0) {
+                    const measPayload = localPat.averages10s.map(m => ({
+                        bed_id: id,
+                        map: m.MAP,
+                        scto2: m.SctO2,
+                        cox: m.COx,
+                        timestamp_s: m.timestampS
+                    }));
+                    
+                    const { error: measErr } = await supabaseClient
+                        .from('measurements')
+                        .insert(measPayload);
+                        
+                    if (measErr) {
+                        console.error(`Errore nella migrazione delle misure per ${id}:`, measErr);
+                    }
+                }
+            }
+            
+            console.log("Seeding and migration completed successfully.");
+            renderBedsGrid();
+            loadActivePatient();
         }
-        
-        renderBedsGrid();
-        loadActivePatient();
     } catch (e) {
         console.error("Errore durante il caricamento da Supabase:", e);
         loadFromLocalStorage();
@@ -596,15 +646,17 @@ async function submitPatientRegistration() {
         try {
             const { error } = await supabaseClient
                 .from('beds')
-                .update({ patient_name: name, patient_surname: surname })
-                .eq('id', selectedRegBedId);
+                .upsert({
+                    id: selectedRegBedId,
+                    patient_name: name,
+                    patient_surname: surname
+                });
             if (error) throw error;
         } catch (e) {
             console.error("Errore nel salvataggio del paziente su Supabase:", e);
         }
-    } else {
-        saveToLocalStorage();
     }
+    saveToLocalStorage();
     
     renderBedsGrid();
     closeRegistrationModal();
@@ -636,9 +688,8 @@ async function deletePatient(bedId) {
             } catch (e) {
                 console.error("Errore durante la dimissione da Supabase:", e);
             }
-        } else {
-            saveToLocalStorage();
         }
+        saveToLocalStorage();
         
         renderBedsGrid();
         loadActivePatient();
@@ -696,9 +747,8 @@ async function addManualMeasurement(isMobile = false) {
         } catch (e) {
             console.error("Errore nel salvataggio della misura su Supabase:", e);
         }
-    } else {
-        saveToLocalStorage();
     }
+    saveToLocalStorage();
     
     document.getElementById("record-count-label").textContent = `Misure: ${p.averages10s.length}`;
     
@@ -727,9 +777,8 @@ async function clearManualData() {
             } catch (e) {
                 console.error("Errore nella cancellazione dei dati su Supabase:", e);
             }
-        } else {
-            saveToLocalStorage();
         }
+        saveToLocalStorage();
         
         loadActivePatient();
     }
