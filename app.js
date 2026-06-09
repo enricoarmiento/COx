@@ -34,6 +34,10 @@ let chartTimeline = null;
 let chartScatter = null;
 let chartBins = null;
 
+// Soglia COx oltre la quale l'autoregolazione e' considerata persa (relazione pressione-passiva).
+// Valore validato vs laser-Doppler: Brady KM et al., Stroke 2007;38:2818-25 (COx > 0.3 ~ perdita autoregolazione).
+const COX_IMPAIRED_THRESHOLD = 0.3;
+
 // --- Authentication State Management ---
 function checkAuthStatus() {
     try {
@@ -1234,7 +1238,7 @@ function updateMetricsUI(map, scto2, forceEmpty = false) {
         coxCard.textContent = cox.toFixed(3);
         
         const desc = document.getElementById("metric-cox-desc");
-        if (cox < 0.1) {
+        if (cox < COX_IMPAIRED_THRESHOLD) {
             coxCard.className = "card-value text-green";
             desc.innerHTML = "<span style='color: #059669;'>● Autoregolazione Attiva</span>";
         } else {
@@ -1365,7 +1369,7 @@ function updateChartsData() {
                 bgColors.push('#059669'); // Optimal MAP bin (Green)
             } else if (item.percentage < 1.0) {
                 bgColors.push('rgba(148, 163, 184, 0.2)'); // Excluded bins (<1% data)
-            } else if (item.avgCOx !== null && item.avgCOx < 0.1) {
+            } else if (item.avgCOx !== null && item.avgCOx < COX_IMPAIRED_THRESHOLD) {
                 bgColors.push('#0284c7'); // Active zone (blue)
             } else {
                 bgColors.push('#dc2626'); // Passive zone (red)
@@ -1408,6 +1412,70 @@ function toggleInfoPanel() {
         content.style.display = "none";
         icon.textContent = "▼ Espandi";
     }
+}
+
+// --- Spiegazioni interpretative delle metriche (pulsante "i" su ogni card) ---
+const METRIC_INFO = {
+    map: {
+        title: "MAP — Pressione Arteriosa Media",
+        body: `
+            <p><strong>Cos'è.</strong> Pressione media nelle arterie durante il ciclo cardiaco. È il motore che spinge sangue e ossigeno verso il cervello.</p>
+            <p><strong>Come leggerla.</strong> Le linee guida ERC-ESICM 2021 indicano di mantenere una MAP <strong>&gt; 65 mmHg</strong> dopo l'arresto cardiaco. È un minimo generico: il bersaglio realmente utile per <em>questo</em> paziente è la <strong>MAP Ottimale</strong> calcolata nella card accanto.</p>
+            <p><strong>Confronto chiave.</strong></p>
+            <ul>
+                <li>MAP ≥ MAP Ottimale → perfusione cerebrale verosimilmente adeguata.</li>
+                <li>MAP &lt; MAP Ottimale → rischio di ipoperfusione: il cervello potrebbe ricevere meno ossigeno.</li>
+            </ul>
+        `
+    },
+    scto2: {
+        title: "SctO₂ — Ossigenazione Tessuto Cerebrale",
+        body: `
+            <p><strong>Cos'è.</strong> Saturazione di ossigeno del tessuto cerebrale, misurata in modo non invasivo con NIRS (sensori frontali). Riflette il bilancio tra ossigeno che arriva e ossigeno consumato dal cervello.</p>
+            <p><strong>Come leggerla.</strong> Valori tipici ~60–75%. Un calo marcato rispetto al basale del paziente, o valori bassi persistenti, suggeriscono ipoperfusione o ipossia cerebrale.</p>
+            <p><strong>Attenzione.</strong> Conta più il <em>trend</em> che il singolo numero. Il segnale NIRS risente di luce ambientale, posizione del sensore e flusso del cuoio capelluto: va interpretato nel contesto clinico, non isolato.</p>
+        `
+    },
+    cox: {
+        title: "COx — Indice di Autoregolazione Cerebrale",
+        body: `
+            <p><strong>Cos'è.</strong> Correlazione (Pearson) tra MAP e SctO₂ sugli ultimi 5 minuti. Dice se l'autoregolazione cerebrale sta funzionando in questo momento.</p>
+            <p><strong>Come leggerlo.</strong></p>
+            <ul>
+                <li><span style="color:#059669;font-weight:600;">COx &lt; 0.3 (verde)</span> → autoregolazione <strong>attiva</strong>: i vasi cerebrali compensano le oscillazioni pressorie, l'ossigenazione resta stabile.</li>
+                <li><span style="color:#dc2626;font-weight:600;">COx ≥ 0.3 (rosso)</span> → relazione <strong>pressione-passiva</strong>: autoregolazione persa, la SctO₂ segue la MAP. Ogni calo pressorio fa calare l'ossigeno cerebrale.</li>
+            </ul>
+            <p><strong>Soglia.</strong> Il cut-off 0.3 deriva dalla validazione sperimentale di Brady et al. (Stroke 2007). Servono almeno 5 minuti di dati continui per il primo calcolo.</p>
+        `
+    },
+    optmap: {
+        title: "MAP Ottimale (MAPopt)",
+        body: `
+            <p><strong>Cos'è.</strong> La pressione a cui l'autoregolazione di <em>questo</em> paziente lavora meglio. Si ottiene raggruppando i valori di COx in bin di MAP da 5 mmHg e scegliendo il bin con COx medio più negativo.</p>
+            <p><strong>Come usarla.</strong> È il target pressorio <strong>personalizzato</strong>, da affiancare (non sostituire) al minimo di 65 mmHg delle linee guida. Il "±" indica l'ampiezza del bin di pressione, non un errore di misura.</p>
+            <p><strong>Affidabilità.</strong> Richiede dati sufficienti e distribuiti su più livelli di MAP. È un metodo <em>generatore di ipotesi</em>: gli RCT (Neuroprotect, COMACARE) non hanno dimostrato un beneficio di sopravvivenza nel forzare MAP più alte. Usala come guida, non come ordine.</p>
+        `
+    },
+    timeunder: {
+        title: "Tempo sotto MAP Ottimale",
+        body: `
+            <p><strong>Cos'è.</strong> Percentuale del tempo registrato in cui la MAP è rimasta <strong>sotto</strong> la MAP Ottimale del paziente.</p>
+            <p><strong>Come leggerlo.</strong> Più alta la percentuale, più tempo il cervello è rimasto in possibile ipoperfusione. Nello studio osservazionale di Ameloot (2015) un tempo maggiore sotto la MAPopt era associato a minore sopravvivenza.</p>
+            <p><strong>Cosa fare.</strong> Se il valore sale, indaga la causa (ipotensione, sedazione, ipovolemia) e valuta con l'équipe se avvicinare la MAP al target. Resta un dato associativo, non una prova di causalità.</p>
+        `
+    }
+};
+
+function showMetricInfo(key) {
+    const info = METRIC_INFO[key];
+    if (!info) return;
+    document.getElementById("metric-info-title").innerHTML = info.title;
+    document.getElementById("metric-info-body").innerHTML = info.body;
+    document.getElementById("metric-info-modal").style.display = "flex";
+}
+
+function closeMetricInfo() {
+    document.getElementById("metric-info-modal").style.display = "none";
 }
 
 // --- Mobile Sidebar Helper Functions ---

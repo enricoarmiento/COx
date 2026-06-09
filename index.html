@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <!-- Login Screen Overlay -->
@@ -152,7 +152,10 @@
                 <div class="metric-card">
                     <div class="card-header">
                         <span class="card-title">MAP Corrente</span>
-                        <span class="card-unit">mmHg</span>
+                        <div class="card-header-right">
+                            <span class="card-unit">mmHg</span>
+                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('map')" aria-label="Come interpretare la MAP" title="Come interpretare">i</button>
+                        </div>
                     </div>
                     <div class="card-value text-blue" id="metric-map">--</div>
                     <div class="card-footer">
@@ -164,7 +167,10 @@
                 <div class="metric-card">
                     <div class="card-header">
                         <span class="card-title">Sc<sub>t</sub>O<sub>2</sub> Corrente</span>
-                        <span class="card-unit">%</span>
+                        <div class="card-header-right">
+                            <span class="card-unit">%</span>
+                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('scto2')" aria-label="Come interpretare la SctO2" title="Come interpretare">i</button>
+                        </div>
                     </div>
                     <div class="card-value text-purple" id="metric-scto2">--</div>
                     <div class="card-footer">
@@ -176,7 +182,10 @@
                 <div class="metric-card">
                     <div class="card-header">
                         <span class="card-title">COx Corrente</span>
-                        <span class="card-unit">Indice (-1 to +1)</span>
+                        <div class="card-header-right">
+                            <span class="card-unit">Indice (-1 to +1)</span>
+                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('cox')" aria-label="Come interpretare il COx" title="Come interpretare">i</button>
+                        </div>
                     </div>
                     <div class="card-value" id="metric-cox">--</div>
                     <div class="card-footer">
@@ -188,7 +197,10 @@
                 <div class="metric-card highlight-green">
                     <div class="card-header">
                         <span class="card-title">MAP Ottimale</span>
-                        <span class="card-unit">mmHg</span>
+                        <div class="card-header-right">
+                            <span class="card-unit">mmHg</span>
+                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('optmap')" aria-label="Come interpretare la MAP Ottimale" title="Come interpretare">i</button>
+                        </div>
                     </div>
                     <div class="card-value text-green" id="metric-optmap">--</div>
                     <div class="card-footer">
@@ -200,7 +212,10 @@
                 <div class="metric-card highlight-red">
                     <div class="card-header">
                         <span class="card-title">Tempo sotto MAP Ottimale</span>
-                        <span class="card-unit">%</span>
+                        <div class="card-header-right">
+                            <span class="card-unit">%</span>
+                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('timeunder')" aria-label="Come interpretare il tempo sotto MAP Ottimale" title="Come interpretare">i</button>
+                        </div>
                     </div>
                     <div class="card-value text-red" id="metric-timeunder">--</div>
                     <div class="card-footer">
@@ -261,9 +276,10 @@
                             <p>Il <strong>Cerebral Oxymetry Index (COx)</strong> è un indice statistico in continuo che monitora lo stato dell'<strong>autoregolazione cerebrale</strong> nei pazienti critici (ad esempio dopo un arresto cardiaco o un trauma cranico).</p>
                             <p>In condizioni normali, l'autoregolazione vascolare cerebrale garantisce che il flusso di sangue al cervello (e quindi l'ossigenazione) rimanga stabile anche se la pressione arteriosa sistemica (MAP) oscilla:</p>
                             <ul>
-                                <li><strong>Autoregolazione Preservata (COx ≤ 0)</strong>: Quando la pressione varia, i vasi cerebrali si adattano (vasocostrizione/vasodilatazione) per compensare. Di conseguenza, la saturazione dell'ossigeno cerebrale (Sc<sub>t</sub>O<sub>2</sub>) rimane stabile. I due parametri sono indipendenti, generando una correlazione lineare prossima a zero o leggermente negativa.</li>
-                                <li><strong>Autoregolazione Compromessa (COx > 0.1)</strong>: Quando il meccanismo vascolare fallisce, il flusso cerebrale diventa "pressione-passivo". Ad ogni calo pressorio corrisponde un calo dell'ossigeno cerebrale, e viceversa. MAP e Sc<sub>t</sub>O<sub>2</sub> fluttuano in sintonia, determinando una forte correlazione lineare positiva.</li>
+                                <li><strong>Autoregolazione Preservata (COx &lt; 0.3)</strong>: Quando la pressione varia, i vasi cerebrali si adattano (vasocostrizione/vasodilatazione) per compensare. Di conseguenza, la saturazione dell'ossigeno cerebrale (Sc<sub>t</sub>O<sub>2</sub>) rimane stabile. I due parametri sono indipendenti, generando una correlazione lineare prossima a zero o leggermente negativa.</li>
+                                <li><strong>Autoregolazione Compromessa (COx ≥ 0.3)</strong>: Quando il meccanismo vascolare fallisce, il flusso cerebrale diventa "pressione-passivo". Ad ogni calo pressorio corrisponde un calo dell'ossigeno cerebrale, e viceversa. MAP e Sc<sub>t</sub>O<sub>2</sub> fluttuano in sintonia, determinando una forte correlazione lineare positiva.</li>
                             </ul>
+                            <p class="threshold-note">La soglia <strong>COx ≥ 0.3</strong> usata per segnalare la perdita di autoregolazione deriva dalla validazione sperimentale contro laser-Doppler di Brady et al. (Stroke 2007), non da un cut-off arbitrario.</p>
                             
                             <h4 style="margin-top: 1.25rem;">Perché individuare la MAP Ottimale (MAP<sub>opt</sub>)?</h4>
                             <p>Molti pazienti post-arresto cardiaco soffrono di ipertensione cronica pregressa, la quale sposta a destra la soglia inferiore dell'autoregolazione. Adottare target pressori standard identici per tutti (e.g. MAP > 65 mmHg) può causare ipoperfusione cerebrale grave in questa categoria di pazienti. Calcolare la MAP<sub>opt</sub> consente di personalizzare il target pressorio sul singolo letto vascolare.</p>
@@ -293,6 +309,23 @@
                             </ol>
                         </div>
                     </div>
+
+                    <div class="clinical-warning">
+                        <strong>⚠ Avvertenza clinica — livello di evidenza.</strong>
+                        Il metodo COx/MAP<sub>opt</sub> nasce da uno studio osservazionale pilota (Ameloot 2015, n=51), <em>hypothesis-generating</em>. I successivi studi randomizzati controllati <strong>non hanno confermato un beneficio di outcome</strong> nel forzare una MAP più alta: il <em>Neuroprotect trial</em> (target 85–100 vs 65 mmHg) ha migliorato l'ossigenazione cerebrale ma non ha ridotto il danno cerebrale alla RM né l'esito a 180 giorni; <em>COMACARE</em> non ha mostrato differenze sulla NSE. Le linee guida ERC-ESICM 2021 raccomandano tuttora una MAP <strong>&gt; 65 mmHg</strong>, da individualizzare su diuresi e lattati. Inoltre il segnale NIRS risente di luce ambientale, posizione del sensore e flusso extracranico, e l'accordo COx vs PRx è limitato. <strong>Strumento di supporto e ricerca, non sostituisce il giudizio clinico né protocolli validati.</strong>
+                    </div>
+
+                    <div class="refs-block">
+                        <h4>Fonti & Bibliografia</h4>
+                        <ol class="refs-list">
+                            <li><strong>Ameloot K, et al.</strong> An observational NIRS study on cerebral autoregulation in post-cardiac arrest patients. <em>Resuscitation</em> 2015;90:121–126. <a href="https://doi.org/10.1016/j.resuscitation.2015.03.001" target="_blank" rel="noopener">doi:10.1016/j.resuscitation.2015.03.001</a> — <span class="ref-tag">base del metodo e della MAP<sub>opt</sub></span></li>
+                            <li><strong>Brady KM, et al.</strong> Continuous time-domain analysis of cerebrovascular autoregulation using NIRS. <em>Stroke</em> 2007;38:2818–2825. <a href="https://www.ahajournals.org/doi/full/10.1161/STROKEAHA.107.485706" target="_blank" rel="noopener">ahajournals</a> — <span class="ref-tag">origine dell'indice COx e soglia ≈0.3</span></li>
+                            <li><strong>Aries MJH, et al.</strong> Continuous determination of optimal cerebral perfusion pressure in traumatic brain injury. <em>Crit Care Med</em> 2012;40:2456–2463. — <span class="ref-tag">metodologia della curva pressione-ottimale (MAP<sub>opt</sub>/CPP<sub>opt</sub>)</span></li>
+                            <li><strong>Ameloot K, et al.</strong> Early goal-directed haemodynamic optimization of cerebral oxygenation — the Neuroprotect post-cardiac arrest trial. <em>Eur Heart J</em> 2019;40:1804–1814. <a href="https://academic.oup.com/eurheartj/article/40/22/1804/5416156" target="_blank" rel="noopener">eurheartj</a> — <span class="ref-tag">RCT di conferma (outcome neutro)</span></li>
+                            <li><strong>Jakkula P, et al.</strong> Targeting low-normal or high-normal MAP after cardiac arrest (COMACARE). <em>Intensive Care Med</em> 2018;44:2112–2121. <a href="https://link.springer.com/article/10.1007/s00134-018-5446-8" target="_blank" rel="noopener">springer</a> — <span class="ref-tag">RCT (NSE non differente)</span></li>
+                            <li><strong>Nolan JP, et al.</strong> ERC-ESICM Guidelines 2021: Post-resuscitation care. <em>Resuscitation</em> 2021;161:220–269. <a href="https://www.resus.org.uk/library/2021-resuscitation-guidelines/post-resuscitation-care-guidelines" target="_blank" rel="noopener">resus.org.uk</a> — <span class="ref-tag">target MAP correnti</span></li>
+                        </ol>
+                    </div>
                 </div>
             </section>
         </main>
@@ -318,9 +351,23 @@
         </div>
     </div>
     
+    <!-- Metric Info Modal -->
+    <div id="metric-info-modal" class="modal-overlay" style="display: none;" onclick="closeMetricInfo(event)">
+        <div class="modal-content metric-info-content" onclick="event.stopPropagation()">
+            <div class="metric-info-head">
+                <h3 id="metric-info-title">Info</h3>
+                <button class="metric-info-close" type="button" onclick="closeMetricInfo()" aria-label="Chiudi">×</button>
+            </div>
+            <div id="metric-info-body" class="metric-info-body"></div>
+            <div class="modal-actions" style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+                <button class="btn-primary" onclick="closeMetricInfo()" style="padding: 0.5rem 1.25rem; font-size: 0.85rem;">Ho capito</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar Backdrop for Mobile -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
-    
-    <script src="app.js?v=3"></script>
+
+    <script src="app.js?v=4"></script>
 </body>
 </html>
