@@ -1,0 +1,1305 @@
+/* CSS Reset & Variables */
+:root {
+    --bg-app: #f1f5f9;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --border-card: #e2e8f0;
+    --border-card-hover: #cbd5e1;
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    
+    --color-blue: #0284c7;
+    --color-blue-bg: #f0f9ff;
+    --color-purple: #7c3aed;
+    --color-purple-bg: #f5f3ff;
+    --color-green: #059669;
+    --color-green-bg: #ecfdf5;
+    --color-red: #dc2626;
+    --color-red-bg: #fef2f2;
+    --color-yellow: #d97706;
+    
+    --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    height: 100vh;
+}
+
+/* Container Layout */
+.app-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100vh;
+}
+
+/* Sidebar Styling */
+.sidebar {
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-card);
+    padding: 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    margin-bottom: 1rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.pulse-dot {
+    width: 10px;
+    height: 10px;
+    background-color: var(--color-red);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(248, 113, 113, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+    }
+}
+
+.logo h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sidebar-header .subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-card);
+    margin: 0.75rem 0;
+}
+
+/* Sidebar Control Groups */
+.control-group {
+    margin-bottom: 1.25rem;
+}
+
+.control-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.phenotype-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Buttons and Controls */
+.btn-toggle {
+    font-family: var(--font-main);
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-card);
+    color: var(--text-secondary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.btn-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+}
+
+.btn-toggle.active {
+    background-color: var(--color-blue-bg);
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+    font-weight: 600;
+}
+
+#btn-pheno-disturbed.active {
+    background-color: var(--color-purple-bg);
+    border-color: var(--color-purple);
+    color: var(--color-purple);
+}
+
+.btn-toggle .icon {
+    font-size: 1rem;
+}
+
+.sim-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-primary, .btn-secondary {
+    font-family: var(--font-main);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    border: none;
+    flex: 1;
+}
+
+.btn-primary {
+    background-color: #2563eb;
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-card);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Sliders */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #cbd5e1;
+    outline: none;
+    margin: 0.5rem 0;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-blue);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    transition: all 0.1s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.slider-helper {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.25rem;
+    line-height: 1.2;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* Main Dashboard Styling */
+.dashboard-main {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+    background-color: var(--bg-app);
+}
+
+/* Topbar Header */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-card);
+    padding-bottom: 0.75rem;
+}
+
+.topbar h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.status-badge {
+    background-color: var(--color-green-bg);
+    border: 1px solid var(--color-green);
+    color: var(--color-green);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.status-badge.paused {
+    background-color: var(--color-red-bg);
+    border-color: var(--color-red);
+    color: var(--color-red);
+}
+
+.time-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+/* Metrics Cards Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+}
+
+.metric-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-card-hover);
+    box-shadow: var(--shadow-lg);
+}
+
+.metric-card:hover::before {
+    background: var(--border-card-hover);
+}
+
+.metric-card.highlight-green:hover::before {
+    background: var(--color-green);
+}
+
+.metric-card.highlight-red:hover::before {
+    background: var(--color-red);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.card-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.card-unit {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.card-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 0.15rem 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.card-footer {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+}
+
+/* Card Accent Text Colors */
+.text-blue { color: var(--color-blue); }
+.text-purple { color: var(--color-purple); }
+.text-green { color: var(--color-green); }
+.text-red { color: var(--color-red); }
+
+/* Highlighted Cards Border Colors */
+.metric-card.highlight-green {
+    border-color: rgba(52, 211, 153, 0.2);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(52, 211, 153, 0.02) 100%);
+}
+
+.metric-card.highlight-red {
+    border-color: rgba(248, 113, 113, 0.2);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(248, 113, 113, 0.02) 100%);
+}
+
+/* Charts Sections */
+.charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.chart-panel {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-md);
+}
+
+.chart-panel.full-width {
+    width: 100%;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.panel-header h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-legend {
+    display: flex;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-dot.dashed {
+    border-radius: 0;
+    width: 12px;
+    height: 2px;
+}
+
+.bg-blue { background-color: var(--color-blue); }
+.bg-purple { background-color: var(--color-purple); }
+.bg-green { background-color: var(--color-green); }
+
+.chart-wrapper {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.charts-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.chart-panel.half-width {
+    flex: 1;
+    width: 50%;
+}
+
+/* Patient Dropdown Menu (Header dropdown selector) */
+.patient-info-display.dropdown {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.patient-info-display.dropdown:hover {
+    background-color: var(--color-blue-bg);
+}
+
+.patient-info-display.dropdown h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dropdown-arrow {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: transform 0.2s ease;
+}
+
+.patient-info-display.dropdown:hover .dropdown-arrow {
+    color: var(--color-blue);
+    transform: translateY(2px);
+}
+
+.patient-dropdown-list {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 300px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card-hover);
+    border-radius: 8px;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+    z-index: 110;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    flex-direction: column;
+}
+
+.patient-dropdown-list.show {
+    display: flex;
+}
+
+.patient-dropdown-item {
+    position: relative;
+    user-select: none;
+    background: none;
+    border: none;
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-main);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.02);
+}
+
+.drop-delete-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.drop-delete-btn:hover {
+    color: var(--color-red);
+    background-color: var(--color-red-bg);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.patient-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.patient-dropdown-item:hover {
+    background-color: var(--bg-app);
+}
+
+.patient-dropdown-item.active {
+    background-color: var(--color-blue-bg);
+    color: var(--color-blue);
+    font-weight: 600;
+}
+
+.drop-bed-num {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.patient-dropdown-item.active .drop-bed-num {
+    color: var(--color-blue);
+}
+
+.drop-patient-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drop-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--border-card);
+}
+
+.drop-status-dot.occupied {
+    background-color: var(--color-blue);
+}
+
+/* Mobile Layout Helpers (Hidden on Desktop) */
+.mobile-nav,
+.mobile-beds-switcher,
+.mobile-quick-actions,
+.mobile-file-actions {
+    display: none;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1400px) {
+    .metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    body {
+        height: auto;
+        overflow-y: auto;
+    }
+    
+    .app-container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .sidebar {
+        display: none !important; /* Completely suppress desktop sidebar on mobile */
+    }
+    
+    .dashboard-main {
+        height: auto;
+        overflow-y: visible;
+        padding: 1rem;
+    }
+    
+    /* Mobile Top Header style */
+    .mobile-nav {
+        display: flex;
+        background-color: var(--bg-sidebar);
+        border-bottom: 1px solid var(--border-card);
+        padding: 0.75rem 1rem;
+        align-items: center;
+        justify-content: center;
+        position: sticky;
+        top: 0;
+        z-index: 90;
+        box-shadow: var(--shadow-sm);
+        margin: -1rem -1rem 1rem -1rem;
+    }
+    
+    .mobile-logo {
+        font-size: 1.1rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        background: linear-gradient(135deg, var(--color-blue), var(--color-purple));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Horizontal Bed Switcher */
+    .mobile-beds-switcher {
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        padding: 0.25rem 0 0.75rem 0;
+        margin-bottom: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        border-bottom: 1px solid var(--border-card);
+    }
+    
+    /* Hide scrollbar but keep functionality */
+    .mobile-beds-switcher::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .mobile-bed-btn {
+        position: relative;
+        user-select: none;
+        flex: 0 0 auto;
+        font-family: var(--font-main);
+        background-color: var(--bg-card);
+        border: 1px dashed var(--border-card);
+        border-radius: 8px;
+        padding: 0.5rem 1.85rem 0.5rem 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+    }
+    
+    .mobile-bed-delete-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: rgba(220, 38, 38, 0.1);
+        color: var(--color-red);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+    }
+    
+    .mobile-bed-delete-btn:hover {
+        background-color: var(--color-red);
+        color: #ffffff;
+    }
+    
+    .mobile-bed-btn.occupied {
+        border-style: solid;
+        border-color: rgba(2, 132, 199, 0.2);
+        background-color: rgba(2, 132, 199, 0.02);
+        color: var(--text-primary);
+    }
+    
+    .mobile-bed-btn.selected {
+        border-color: var(--color-blue);
+        background-color: var(--color-blue-bg);
+        color: var(--color-blue);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .mob-bed-icon {
+        font-size: 0.95rem;
+    }
+    
+    .mob-bed-num {
+        font-size: 0.8rem;
+    }
+    
+    .mob-bed-status {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .mobile-bed-btn.selected .mob-bed-status {
+        color: var(--color-blue);
+    }
+    
+    /* Quick Actions Card */
+    .mobile-quick-actions {
+        display: block;
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .mobile-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+        text-align: center;
+    }
+    
+    .mobile-empty-state p {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    
+    .mobile-ingestion-form h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 0.75rem;
+    }
+    
+    /* Mobile File & CSV Actions */
+    .mobile-file-actions {
+        display: flex;
+        margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--border-card);
+        padding-bottom: 1rem;
+    }
+    
+    .mobile-csv-row {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    
+    .mobile-csv-row button {
+        flex: 1;
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+    
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+    
+    .charts-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .chart-panel.half-width {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .metrics-grid {
+        grid-template-columns: 1fr; /* Stack metrics vertically on very small mobile screens */
+    }
+    
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-card);
+        margin-bottom: 1rem;
+    }
+    
+    .topbar-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr; /* Stack scientific rationale columns vertically on mobile */
+        gap: 1.5rem;
+    }
+    
+    .chart-wrapper {
+        height: 240px; /* Restrict height slightly on mobile to fit nicely */
+    }
+    
+    .modal-content {
+        width: 95%;
+        padding: 1.5rem 1rem;
+    }
+}
+
+/* Manual Mode Elements & File Actions */
+.mode-selector {
+    display: flex;
+    gap: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-card);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.mode-selector .btn-toggle {
+    border: none;
+    background-color: transparent;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    flex: 1;
+    justify-content: center;
+    border-radius: 6px;
+    text-align: center;
+    gap: 0.4rem;
+}
+
+.mode-selector .btn-toggle.active {
+    background-color: var(--color-blue-bg);
+    color: var(--color-blue);
+}
+
+.manual-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.text-input {
+    font-family: var(--font-main);
+    background-color: #ffffff;
+    border: 1px solid var(--border-card);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    width: 50%;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.text-input:focus {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 2px var(--color-blue-bg);
+}
+
+.file-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-danger {
+    font-family: var(--font-main);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    border: none;
+    background-color: var(--color-red-bg);
+    border: 1px solid var(--color-red);
+    color: var(--color-red);
+}
+
+.btn-danger:hover {
+    background-color: var(--color-red);
+    color: #fff;
+    box-shadow: 0 4px 6px -1px rgba(248, 113, 113, 0.2);
+}
+
+/* Scientific Info Panel CSS */
+.info-panel {
+    border: 1px solid rgba(56, 189, 248, 0.15);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(56, 189, 248, 0.01) 100%);
+}
+
+.info-panel:hover {
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.info-content {
+    transition: all 0.3s ease;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+}
+
+.info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.info-column h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-blue);
+    border-left: 3px solid var(--color-blue);
+    padding-left: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.info-column p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    text-align: justify;
+}
+
+.info-column ul, .info-column ol {
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-column li strong {
+    color: var(--text-primary);
+}
+
+.step-list li {
+    margin-bottom: 0.75rem;
+}
+
+/* Monospace Math Block Formatting */
+.math-block, .math-block-full {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-card);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    color: var(--text-primary);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.math-block-full {
+    padding: 1rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.formula-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-style: italic;
+    display: block;
+    margin-top: -0.25rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+/* Math Fraction Display CSS */
+.fraction {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+    margin: 0 0.25rem;
+}
+
+.numerator {
+    border-bottom: 1px solid var(--text-primary);
+    padding: 0 0.25rem 0.1rem 0.25rem;
+    text-align: center;
+}
+
+.denominator {
+    padding: 0.1rem 0.25rem 0 0.25rem;
+    text-align: center;
+}
+
+@media (max-width: 1200px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+/* Patient Bed Management Styles */
+.beds-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.bed-button {
+    position: relative;
+    user-select: none;
+    font-family: var(--font-main);
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--border-card);
+    border-radius: 8px;
+    padding: 0.6rem 0.4rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bed-delete-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: rgba(220, 38, 38, 0.1);
+    color: var(--color-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.bed-delete-btn:hover {
+    background-color: var(--color-red);
+    color: #ffffff;
+}
+
+.bed-button:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-style: solid;
+    color: var(--text-primary);
+}
+
+.bed-button.occupied {
+    background-color: rgba(56, 189, 248, 0.05);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    color: var(--text-primary);
+}
+
+.bed-button.selected {
+    border-color: var(--color-blue) !important;
+    background-color: var(--color-blue-bg) !important;
+    box-shadow: 0 0 10px rgba(2, 132, 199, 0.2) !important;
+    color: var(--color-blue) !important;
+}
+
+.bed-icon {
+    font-size: 1.1rem;
+}
+
+.bed-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.bed-status {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.bed-button.occupied .bed-status {
+    color: var(--text-secondary);
+    font-weight: 500;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Patient Header Badges */
+.patient-info-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.phenotype-badge {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    align-self: flex-start;
+    display: inline-block;
+}
+
+.phenotype-badge.preserved {
+    background-color: var(--color-blue-bg);
+    color: var(--color-blue);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.phenotype-badge.disturbed {
+    background-color: var(--color-purple-bg);
+    color: var(--color-purple);
+    border: 1px solid rgba(192, 132, 252, 0.2);
+}
+
+/* Modal Overlay & Card Dialog */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: #ffffff;
+    border: 1px solid var(--border-card-hover);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 440px;
+    padding: 2rem;
+    animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-content h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+}
+
+#register-modal-bed-label {
+    font-size: 0.85rem;
+    color: var(--color-blue);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.text-input-full {
+    font-family: var(--font-main);
+    background-color: #ffffff;
+    border: 1px solid var(--border-card);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    width: 100%;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.text-input-full:focus {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 2px var(--color-blue-bg);
+}
+
+
+

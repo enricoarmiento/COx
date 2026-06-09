@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cerebral Autoregulation Live Dashboard (COx)</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="pulse-dot"></span>
+                    <h2>COx Live</h2>
+                </div>
+                <p class="subtitle">Monitoraggio Autoregolazione Cerebrale</p>
+            </div>
+            
+            <hr class="divider">
+            
+            <div class="control-group">
+                <label class="control-label">Mappa Posti Letto</label>
+                <div class="beds-grid" id="beds-grid-container">
+                    <!-- Loaded dynamically via app.js -->
+                </div>
+            </div>
+            
+            <hr class="divider">
+            
+            <!-- Inserimento Manuale Misure -->
+            <div class="control-group">
+                <label class="control-label">Inserisci Misura</label>
+                <div class="manual-input-row">
+                    <input type="number" id="input-map" class="text-input" placeholder="MAP (mmHg)" min="30" max="180">
+                    <input type="number" id="input-scto2" class="text-input" placeholder="SctO2 (%)" min="10" max="100">
+                </div>
+                <button class="btn-primary" onclick="addManualMeasurement()" style="margin-top: 0.5rem; width: 100%;">
+                    <span>＋</span> Aggiungi Punto
+                </button>
+            </div>
+
+            <!-- Operazioni Dati -->
+            <div class="control-group">
+                <label class="control-label">Operazioni Dati</label>
+                <div class="file-actions">
+                    <button class="btn-danger" onclick="clearManualData()" style="width: 100%;">
+                        <span>🗑️</span> Svuota Dati
+                    </button>
+                </div>
+            </div>
+            
+            <hr class="divider">
+
+            <div class="sidebar-footer">
+                <p>Basato su Ameloot et al. 2015</p>
+                <p>Resuscitation Journal</p>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="dashboard-main">
+            <!-- Mobile Navigation Header -->
+            <div class="mobile-nav">
+                <span class="mobile-logo">COx Live - Autoregolazione</span>
+            </div>
+
+            <!-- Mobile Bed Switcher Row -->
+            <div class="mobile-beds-switcher" id="mobile-beds-switcher">
+                <!-- Generated dynamically via app.js -->
+            </div>
+
+            <!-- Mobile Quick Actions Ingestion Form / Registration Button -->
+            <div class="mobile-quick-actions" id="mobile-quick-actions">
+                <!-- Generated dynamically via app.js -->
+            </div>
+
+            <!-- Mobile File & Data Actions -->
+            <div class="mobile-file-actions" id="mobile-file-actions">
+                <!-- Generated dynamically via app.js -->
+            </div>
+
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="patient-info-display dropdown" id="patient-dropdown-trigger" onclick="togglePatientDropdown(event)">
+                    <h1>Letto <span id="header-bed-num">--</span>: <span id="header-patient-name">Caricamento...</span> <span class="dropdown-arrow">▼</span></h1>
+                    <div class="patient-dropdown-list" id="patient-dropdown-list">
+                        <!-- Generated dynamically via app.js -->
+                    </div>
+                </div>
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="status-indicator">
+                        <span class="status-badge" id="status-badge">Paziente Reale</span>
+                        <span id="record-count-label" class="time-label">Misure: 0</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Metrics Cards Grid -->
+            <section class="metrics-grid">
+                <!-- Card 1: MAP -->
+                <div class="metric-card">
+                    <div class="card-header">
+                        <span class="card-title">MAP Corrente</span>
+                        <span class="card-unit">mmHg</span>
+                    </div>
+                    <div class="card-value text-blue" id="metric-map">--</div>
+                    <div class="card-footer">
+                        <span>Pressione Arteriosa Media</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: SctO2 -->
+                <div class="metric-card">
+                    <div class="card-header">
+                        <span class="card-title">Sc<sub>t</sub>O<sub>2</sub> Corrente</span>
+                        <span class="card-unit">%</span>
+                    </div>
+                    <div class="card-value text-purple" id="metric-scto2">--</div>
+                    <div class="card-footer">
+                        <span>Ossigenazione Tessuto Cerebrale</span>
+                    </div>
+                </div>
+
+                <!-- Card 3: COx -->
+                <div class="metric-card">
+                    <div class="card-header">
+                        <span class="card-title">COx Corrente</span>
+                        <span class="card-unit">Indice (-1 to +1)</span>
+                    </div>
+                    <div class="card-value" id="metric-cox">--</div>
+                    <div class="card-footer">
+                        <span id="metric-cox-desc">Inizializzazione...</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Optimal MAP -->
+                <div class="metric-card highlight-green">
+                    <div class="card-header">
+                        <span class="card-title">MAP Ottimale</span>
+                        <span class="card-unit">mmHg</span>
+                    </div>
+                    <div class="card-value text-green" id="metric-optmap">--</div>
+                    <div class="card-footer">
+                        <span>Pressione target consigliata</span>
+                    </div>
+                </div>
+
+                <!-- Card 5: Time under Opt MAP -->
+                <div class="metric-card highlight-red">
+                    <div class="card-header">
+                        <span class="card-title">Tempo sotto MAP Ottimale</span>
+                        <span class="card-unit">%</span>
+                    </div>
+                    <div class="card-value text-red" id="metric-timeunder">--</div>
+                    <div class="card-footer">
+                        <span>Tempo trascorso in ipoperfusione</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Container -->
+            <section class="charts-container">
+                <!-- Top Chart: Real-time Timeline -->
+                <div class="chart-panel full-width">
+                    <div class="panel-header">
+                        <h3>Timeline Segnale Fisiologico (Streaming Live)</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-dot bg-blue"></span> MAP</span>
+                            <span class="legend-item"><span class="legend-dot bg-purple"></span> SctO2</span>
+                            <span class="legend-item"><span class="legend-dot bg-green dashed"></span> MAP Ottimale</span>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-timeline"></canvas>
+                    </div>
+                </div>
+
+                <!-- Bottom Two Charts Side-by-Side -->
+                <div class="charts-row">
+                    <div class="chart-panel half-width">
+                        <div class="panel-header">
+                            <h3>Saturazione (SctO2) vs Pressione (MAP)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-scatter"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-panel half-width">
+                        <div class="panel-header">
+                            <h3>Indice COx per Bin di MAP (5 mmHg)</h3>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-bins"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Scientific Rationale & Methodology Accordion -->
+            <section class="chart-panel full-width info-panel" style="margin-top: 1rem;">
+                <div class="panel-header" onclick="toggleInfoPanel()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">📖 Razionale Scientifico & Formule di Calcolo</h3>
+                    <span id="info-toggle-icon" style="font-size: 0.85rem; font-weight: 600; color: var(--color-blue); background-color: var(--color-blue-bg); padding: 0.3rem 0.6rem; border-radius: 6px; transition: all 0.2s ease;">▼ Espandi</span>
+                </div>
+                <div id="info-panel-content" class="info-content" style="display: none; margin-top: 1.25rem; border-top: 1px solid var(--border-card); padding-top: 1.25rem;">
+                    <div class="info-grid">
+                        <div class="info-column">
+                            <h4>Cos'è l'Indice COx?</h4>
+                            <p>Il <strong>Cerebral Oxymetry Index (COx)</strong> è un indice statistico in continuo che monitora lo stato dell'<strong>autoregolazione cerebrale</strong> nei pazienti critici (ad esempio dopo un arresto cardiaco o un trauma cranico).</p>
+                            <p>In condizioni normali, l'autoregolazione vascolare cerebrale garantisce che il flusso di sangue al cervello (e quindi l'ossigenazione) rimanga stabile anche se la pressione arteriosa sistemica (MAP) oscilla:</p>
+                            <ul>
+                                <li><strong>Autoregolazione Preservata (COx ≤ 0)</strong>: Quando la pressione varia, i vasi cerebrali si adattano (vasocostrizione/vasodilatazione) per compensare. Di conseguenza, la saturazione dell'ossigeno cerebrale (Sc<sub>t</sub>O<sub>2</sub>) rimane stabile. I due parametri sono indipendenti, generando una correlazione lineare prossima a zero o leggermente negativa.</li>
+                                <li><strong>Autoregolazione Compromessa (COx > 0.1)</strong>: Quando il meccanismo vascolare fallisce, il flusso cerebrale diventa "pressione-passivo". Ad ogni calo pressorio corrisponde un calo dell'ossigeno cerebrale, e viceversa. MAP e Sc<sub>t</sub>O<sub>2</sub> fluttuano in sintonia, determinando una forte correlazione lineare positiva.</li>
+                            </ul>
+                            
+                            <h4 style="margin-top: 1.25rem;">Perché individuare la MAP Ottimale (MAP<sub>opt</sub>)?</h4>
+                            <p>Molti pazienti post-arresto cardiaco soffrono di ipertensione cronica pregressa, la quale sposta a destra la soglia inferiore dell'autoregolazione. Adottare target pressori standard identici per tutti (e.g. MAP > 65 mmHg) può causare ipoperfusione cerebrale grave in questa categoria di pazienti. Calcolare la MAP<sub>opt</sub> consente di personalizzare il target pressorio sul singolo letto vascolare.</p>
+                        </div>
+                        <div class="info-column">
+                            <h4>Formule e Metodologia di Calcolo</h4>
+                            <ol class="step-list">
+                                <li>
+                                    <strong>Medie Fisiologiche (10s)</strong>
+                                    I dati grezzi di pressione arteriosa sistemica (x) e ossigenazione cerebrale (y), campionati a 2s, vengono mediati su intervalli non sovrapposti di 10 secondi per rimuovere il rumore respiratorio e le pulsazioni pulsati capillari:
+                                    <div class="math-block">
+                                        x̄<sub>10s</sub> = <sup>1</sup>&frasl;<sub>5</sub> &sum;<sub>i=1</sub><sup>5</sup> x<sub>i</sub> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ȳ<sub>10s</sub> = <sup>1</sup>&frasl;<sub>5</sub> &sum;<sub>i=1</sub><sup>5</sup> y<sub>i</sub>
+                                    </div>
+                                </li>
+                                <li>
+                                    <strong>Indice COx (Correlazione di Pearson)</strong>
+                                    Il COx viene calcolato come coefficiente di correlazione lineare su una finestra mobile di 5 minuti (30 campioni consecutivi delle medie a 10s):
+                                    <div class="math-block-full">
+                                        COx = <span class="fraction"><span class="numerator">&sum;<sub>i=1</sub><sup>30</sup> (x<sub>i</sub> - x̄)(y<sub>i</sub> - ȳ)</span><span class="denominator">&radic;[ &sum;<sub>i=1</sub><sup>30</sup> (x<sub>i</sub> - x̄)<sup>2</sup> · &sum;<sub>i=1</sub><sup>30</sup> (y<sub>i</sub> - ȳ)<sup>2</sup> ]</span></span>
+                                    </div>
+                                    <span class="formula-desc">Un valore di COx vicino a +1 indica autoregolazione persa, mentre valori negativi o prossimi allo zero indicano autoregolazione intatta.</span>
+                                </li>
+                                <li>
+                                    <strong>Mappatura e Identificazione di MAP<sub>opt</sub></strong>
+                                    Tutti i valori di COx calcolati vengono ordinati in bin di pressione di 5 mmHg (e.g., 60-65 mmHg). Per eliminare gli artefatti da transizione rapida, vengono esclusi i bin che contengono meno dell'1% del tempo complessivo di registrazione. La <strong>MAP<sub>opt</sub></strong> corrisponde al valore medio del bin associato al <strong>COx medio più basso (più negativo)</strong>.
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <!-- Registration Modal -->
+    <div id="register-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Registrazione Nuovo Paziente</h3>
+            <p id="register-modal-bed-label">Letto --</p>
+            <div class="form-group">
+                <label class="form-label" for="reg-name">Nome</label>
+                <input type="text" id="reg-name" class="text-input-full" placeholder="es. Mario">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="reg-surname">Cognome</label>
+                <input type="text" id="reg-surname" class="text-input-full" placeholder="es. Rossi">
+            </div>
+            <div class="modal-actions" style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                <button class="btn-secondary" onclick="closeRegistrationModal()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Annulla</button>
+                <button class="btn-primary" onclick="submitPatientRegistration()" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Registra Paziente</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar Backdrop for Mobile -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
+    
+    <script src="app.js?v=2"></script>
+</body>
+</html>
