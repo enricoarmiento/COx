@@ -980,7 +980,7 @@ body {
     color: var(--text-primary);
     padding: 0.75rem;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     width: 50%;
     outline: none;
     transition: all 0.2s ease;
@@ -1332,7 +1332,7 @@ body {
     color: var(--text-primary);
     padding: 0.75rem;
     border-radius: 8px;
-    font-size: 0.95rem;
+    font-size: 1rem;
     width: 100%;
     outline: none;
     transition: all 0.2s ease;
