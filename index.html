@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
     <!-- Login Screen Overlay -->
@@ -86,7 +86,10 @@
             <!-- Operazioni Dati -->
             <div class="control-group">
                 <label class="control-label">Operazioni Dati</label>
-                <div class="file-actions">
+                <div class="file-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="loadDemoData()" style="width: 100%; border-color: rgba(2, 132, 199, 0.2); color: var(--color-blue); font-weight: 500;">
+                        <span>📊</span> Carica Dati Demo
+                    </button>
                     <button class="btn-danger" onclick="clearManualData()" style="width: 100%;">
                         <span>🗑️</span> Svuota Dati
                     </button>
@@ -318,6 +321,6 @@
     <!-- Sidebar Backdrop for Mobile -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
     
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

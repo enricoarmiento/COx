@@ -724,8 +724,9 @@ function loadActivePatient() {
         if (fileActionsContainer) {
             fileActionsContainer.style.display = "flex";
             fileActionsContainer.innerHTML = `
-                <div class="mobile-csv-row" style="justify-content: center;">
-                    <button class="btn-danger btn-sm" onclick="clearManualData()" style="width: 100%; max-width: 300px;">🗑️ Svuota Dati</button>
+                <div class="mobile-csv-row" style="display: flex; gap: 0.5rem; justify-content: center; width: 100%;">
+                    <button class="btn-secondary btn-sm" onclick="loadDemoData()" style="flex: 1; max-width: 150px; font-size: 0.8rem;">📊 Dati Demo</button>
+                    <button class="btn-danger btn-sm" onclick="clearManualData()" style="flex: 1; max-width: 150px; font-size: 0.8rem;">🗑️ Svuota</button>
                 </div>
             `;
         }
@@ -1241,8 +1242,39 @@ function updateMetricsUI(map, scto2, forceEmpty = false) {
             desc.innerHTML = "<span style='color: #dc2626;'>▲ Relazione Passiva</span>";
         }
     } else {
-        document.getElementById("metric-cox").textContent = "Calcolo...";
-        document.getElementById("metric-cox-desc").textContent = `Inseriti ${count}/30 punti...`;
+        const coxCard = document.getElementById("metric-cox");
+        const desc = document.getElementById("metric-cox-desc");
+        coxCard.textContent = "Calcolo...";
+        
+        if (count >= 30) {
+            // Check if MAP or SctO2 are constant in the last 30 epochs
+            const windowData = p.averages10s.slice(-30);
+            const maps = windowData.map(d => d.MAP);
+            const scto2s = windowData.map(d => d.SctO2);
+            const isMapConstant = maps.every(val => val === maps[0]);
+            const isSctO2Constant = scto2s.every(val => val === scto2s[0]);
+            
+            if (isMapConstant || isSctO2Constant) {
+                desc.innerHTML = "<span style='color: var(--text-muted); font-size: 0.72rem; line-height: 1.15; display: inline-block;'>Dati costanti rilevati (varianza zero). Varia i valori per calcolare.</span>";
+            } else {
+                desc.textContent = "Calcolo...";
+            }
+        } else {
+            // Check if the points entered so far are constant
+            if (count > 1) {
+                const maps = p.averages10s.map(d => d.MAP);
+                const scto2s = p.averages10s.map(d => d.SctO2);
+                const isMapConstant = maps.every(val => val === maps[0]);
+                const isSctO2Constant = scto2s.every(val => val === scto2s[0]);
+                if (isMapConstant || isSctO2Constant) {
+                    desc.innerHTML = `<span style='color: var(--color-yellow); font-size: 0.72rem; line-height: 1.15; display: inline-block;'>Dati costanti. Inserisci MAP variabili. (${count}/30)</span>`;
+                    const optMapCard = document.getElementById("metric-optmap");
+                    optMapCard.textContent = "Calcolo...";
+                    return;
+                }
+            }
+            desc.textContent = `Inseriti ${count}/30 punti...`;
+        }
     }
     
     const optMapCard = document.getElementById("metric-optmap");
@@ -1417,3 +1449,109 @@ function closePatientDropdown() {
 document.addEventListener("click", () => {
     closePatientDropdown();
 });
+
+// --- Load Demo Data Helper ---
+async function loadDemoData() {
+    let p = patients[activeBedId];
+    if (p === null) {
+        // Automatically register a demo patient if the bed is empty
+        patients[activeBedId] = {
+            name: "Rossi",
+            surname: "Demo",
+            averages10s: []
+        };
+        p = patients[activeBedId];
+        
+        if (supabaseClient) {
+            try {
+                await supabaseClient
+                    .from('beds')
+                    .upsert({
+                        id: activeBedId,
+                        patient_name: "Rossi",
+                        patient_surname: "Demo"
+                    });
+            } catch (e) {
+                console.error("Errore nell'upsert del letto demo su Supabase:", e);
+            }
+        }
+    }
+    
+    // Show a confirmation modal
+    const confirmLoad = confirm(`Vuoi caricare 100 misurazioni di test con autoregolazione preservata per il paziente ${p.name} ${p.surname}?`);
+    if (!confirmLoad) return;
+    
+    // Clear existing measurements
+    p.averages10s = [];
+    
+    // Generate 100 points simulating a preserved patient (LLA = 65 mmHg)
+    let mapVal = 78.0;
+    const count = 100;
+    const points = [];
+    
+    for (let i = 1; i <= count; i++) {
+        // Random walk for MAP (50 - 95 mmHg)
+        mapVal = mapVal + (Math.random() - 0.5) * 6;
+        if (mapVal < 50) mapVal = 50 + Math.random() * 2;
+        if (mapVal > 95) mapVal = 95 - Math.random() * 2;
+        
+        // SctO2 calculation based on LLA = 65 mmHg
+        let scto2Val = 0;
+        if (mapVal >= 65) {
+            // Stable SctO2 around 69% with random noise (active autoregulation)
+            scto2Val = 69.0 - 0.02 * (mapVal - 65) + (Math.random() - 0.5) * 3;
+        } else {
+            // Drops linearly with MAP below LLA (impaired autoregulation)
+            scto2Val = 69.0 - 0.75 * (65 - mapVal) + (Math.random() - 0.5) * 3;
+        }
+        
+        // Clamp biological ranges
+        scto2Val = Math.max(35, Math.min(95, scto2Val));
+        
+        points.push({
+            MAP: parseFloat(mapVal.toFixed(1)),
+            SctO2: parseFloat(scto2Val.toFixed(1)),
+            COx: null,
+            timestampS: i
+        });
+    }
+    
+    p.averages10s = points;
+    
+    // Calculate COx and MAP_mean_5min
+    calculateAllCOx(p);
+    recalculateOptimalMAPForPatient(p);
+    
+    // Sync to Supabase
+    if (supabaseClient) {
+        try {
+            // Delete existing measurements first
+            await supabaseClient
+                .from('measurements')
+                .delete()
+                .eq('bed_id', activeBedId);
+                
+            const payload = p.averages10s.map(pt => ({
+                bed_id: activeBedId,
+                map: pt.MAP,
+                scto2: pt.SctO2,
+                cox: pt.COx,
+                timestamp_s: pt.timestampS
+            }));
+            
+            const { error } = await supabaseClient
+                .from('measurements')
+                .insert(payload);
+                
+            if (error) throw error;
+        } catch (e) {
+            console.error("Errore nel salvataggio su Supabase:", e);
+        }
+    }
+    
+    saveToLocalStorage();
+    renderBedsGrid();
+    loadActivePatient();
+    
+    alert("Dati di test caricati e sincronizzati correttamente!");
+}
