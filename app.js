@@ -1,5 +1,20 @@
 // Clinical COx Dashboard Application Logic - Pure Manual & CSV Ingestion
 
+// --- Supabase Config ---
+const supabaseUrl = "https://nciaamszrerqtjpvutts.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jaWFhbXN6cmVycXRqcHZ1dHRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NzE4NDAsImV4cCI6MjA5NjU0Nzg0MH0.izKqq1xNAtD9UaGFKup21SQKJb-IWnzpqsc2RGGk3xw";
+let supabaseClient = null;
+
+try {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+        supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    } else if (window.supabase && window.supabase.createClient) {
+        supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+    }
+} catch (err) {
+    console.error("Errore durante l'inizializzazione di Supabase:", err);
+}
+
 // --- Patient State ---
 let patients = {
     "letto_1": null,
@@ -20,12 +35,111 @@ let chartScatter = null;
 let chartBins = null;
 
 // --- Initialize App ---
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     initCharts();
-    loadFromLocalStorage();
-    renderBedsGrid();
-    loadActivePatient();
+    loadActiveBedIdFromLocalStorage();
+    await loadDataFromSupabase();
 });
+
+function loadActiveBedIdFromLocalStorage() {
+    try {
+        const storedActiveBed = localStorage.getItem("cox_clinical_active_bed_v1");
+        if (storedActiveBed && ["letto_1", "letto_2", "letto_3", "letto_4", "letto_5", "letto_6"].includes(storedActiveBed)) {
+            activeBedId = storedActiveBed;
+        } else {
+            activeBedId = "letto_1";
+        }
+    } catch (e) {
+        console.error("Errore nel caricamento del letto attivo da LocalStorage:", e);
+        activeBedId = "letto_1";
+    }
+}
+
+async function loadDataFromSupabase() {
+    if (!supabaseClient) {
+        console.error("Supabase non inizializzato. Uso LocalStorage come fallback.");
+        loadFromLocalStorage();
+        renderBedsGrid();
+        loadActivePatient();
+        return;
+    }
+    
+    try {
+        const { data: bedsData, error: bedsError } = await supabaseClient
+            .from('beds')
+            .select('id, patient_name, patient_surname')
+            .order('id');
+            
+        if (bedsError) throw bedsError;
+        
+        Object.keys(patients).forEach(k => {
+            patients[k] = null;
+        });
+        
+        if (bedsData) {
+            bedsData.forEach(bed => {
+                if (bed.patient_name || bed.patient_surname) {
+                    patients[bed.id] = {
+                        name: bed.patient_name || "",
+                        surname: bed.patient_surname || "",
+                        averages10s: []
+                    };
+                }
+            });
+        }
+        
+        if (patients[activeBedId] !== null) {
+            const { data: measData, error: measError } = await supabaseClient
+                .from('measurements')
+                .select('map, scto2, cox, timestamp_s')
+                .eq('bed_id', activeBedId)
+                .order('timestamp_s', { ascending: true });
+                
+            if (measError) throw measError;
+            
+            if (measData) {
+                patients[activeBedId].averages10s = measData.map(m => ({
+                    MAP: m.map,
+                    SctO2: m.scto2,
+                    COx: m.cox,
+                    timestampS: m.timestamp_s
+                }));
+            }
+        }
+        
+        renderBedsGrid();
+        loadActivePatient();
+    } catch (e) {
+        console.error("Errore durante il caricamento da Supabase:", e);
+        loadFromLocalStorage();
+        renderBedsGrid();
+        loadActivePatient();
+    }
+}
+
+async function loadActiveBedMeasurements() {
+    if (!supabaseClient || patients[activeBedId] === null) return;
+    try {
+        const { data: measData, error } = await supabaseClient
+            .from('measurements')
+            .select('map, scto2, cox, timestamp_s')
+            .eq('bed_id', activeBedId)
+            .order('timestamp_s', { ascending: true });
+            
+        if (error) throw error;
+        
+        if (measData) {
+            patients[activeBedId].averages10s = measData.map(m => ({
+                MAP: m.map,
+                SctO2: m.scto2,
+                COx: m.cox,
+                timestampS: m.timestamp_s
+            }));
+        }
+    } catch (e) {
+        console.error("Errore nel caricamento delle misurazioni del letto attivo:", e);
+    }
+}
 
 // --- LocalStorage Persistence ---
 function saveToLocalStorage() {
@@ -346,13 +460,17 @@ function renderBedsGrid() {
     });
 }
 
-function selectBed(bedId) {
+async function selectBed(bedId) {
     const patient = patients[bedId];
     if (patient === null) {
         openRegistrationModal(bedId);
     } else {
         activeBedId = bedId;
-        saveToLocalStorage();
+        try {
+            localStorage.setItem("cox_clinical_active_bed_v1", activeBedId);
+        } catch (e) {}
+        
+        await loadActiveBedMeasurements();
         renderBedsGrid();
         loadActivePatient();
         closeSidebar();
@@ -454,7 +572,7 @@ function closeRegistrationModal() {
     selectedRegBedId = null;
 }
 
-function submitPatientRegistration() {
+async function submitPatientRegistration() {
     const name = document.getElementById("reg-name").value.trim();
     const surname = document.getElementById("reg-surname").value.trim();
     
@@ -470,28 +588,65 @@ function submitPatientRegistration() {
     };
     
     activeBedId = selectedRegBedId;
-    saveToLocalStorage();
+    try {
+        localStorage.setItem("cox_clinical_active_bed_v1", activeBedId);
+    } catch (e) {}
+    
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('beds')
+                .update({ patient_name: name, patient_surname: surname })
+                .eq('id', selectedRegBedId);
+            if (error) throw error;
+        } catch (e) {
+            console.error("Errore nel salvataggio del paziente su Supabase:", e);
+        }
+    } else {
+        saveToLocalStorage();
+    }
+    
     renderBedsGrid();
     closeRegistrationModal();
     loadActivePatient();
     closeSidebar();
 }
 
-function deletePatient(bedId) {
+async function deletePatient(bedId) {
     const p = patients[bedId];
     if (p === null) return;
     
     const confirmDischarge = confirm(`Vuoi dimettere il paziente ${p.name} ${p.surname} dal Letto ${bedId.replace("letto_", "")}? Tutti i suoi dati verranno eliminati.`);
     if (confirmDischarge) {
         patients[bedId] = null;
-        saveToLocalStorage();
+        
+        if (supabaseClient) {
+            try {
+                const { error: bedError } = await supabaseClient
+                    .from('beds')
+                    .update({ patient_name: null, patient_surname: null })
+                    .eq('id', bedId);
+                if (bedError) throw bedError;
+                
+                const { error: measError } = await supabaseClient
+                    .from('measurements')
+                    .delete()
+                    .eq('bed_id', bedId);
+                if (measError) throw measError;
+            } catch (e) {
+                console.error("Errore durante la dimissione da Supabase:", e);
+            }
+        } else {
+            saveToLocalStorage();
+        }
+        
         renderBedsGrid();
         loadActivePatient();
     }
 }
 
 // --- Manual Ingestion ---
-function addManualMeasurement(isMobile = false) {
+async function addManualMeasurement(isMobile = false) {
     const p = patients[activeBedId];
     if (p === null) {
         alert("Nessun paziente registrato in questo letto. Registrane uno prima di inserire dati.");
@@ -526,7 +681,24 @@ function addManualMeasurement(isMobile = false) {
     calculateCOxForLastPointOfPatient(p);
     recalculateOptimalMAPForPatient(p);
     
-    saveToLocalStorage();
+    if (supabaseClient) {
+        try {
+            const { error } = await supabaseClient
+                .from('measurements')
+                .insert({
+                    bed_id: activeBedId,
+                    map: mapVal,
+                    scto2: scto2Val,
+                    cox: newAverage.COx,
+                    timestamp_s: nextIndex
+                });
+            if (error) throw error;
+        } catch (e) {
+            console.error("Errore nel salvataggio della misura su Supabase:", e);
+        }
+    } else {
+        saveToLocalStorage();
+    }
     
     document.getElementById("record-count-label").textContent = `Misure: ${p.averages10s.length}`;
     
@@ -537,14 +709,28 @@ function addManualMeasurement(isMobile = false) {
     inputScto2.value = "";
 }
 
-function clearManualData() {
+async function clearManualData() {
     const p = patients[activeBedId];
     if (p === null) return;
     
     const confirmClear = confirm(`Vuoi cancellare tutte le misurazioni del paziente ${p.name} ${p.surname}?`);
     if (confirmClear) {
         p.averages10s = [];
-        saveToLocalStorage();
+        
+        if (supabaseClient) {
+            try {
+                const { error } = await supabaseClient
+                    .from('measurements')
+                    .delete()
+                    .eq('bed_id', activeBedId);
+                if (error) throw error;
+            } catch (e) {
+                console.error("Errore nella cancellazione dei dati su Supabase:", e);
+            }
+        } else {
+            saveToLocalStorage();
+        }
+        
         loadActivePatient();
     }
 }
