@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
     <!-- Login Screen Overlay -->
@@ -152,10 +152,7 @@
                 <div class="metric-card">
                     <div class="card-header">
                         <span class="card-title">MAP Corrente</span>
-                        <div class="card-header-right">
-                            <span class="card-unit">mmHg</span>
-                            <button class="metric-info-btn" type="button" onclick="showMetricInfo('map')" aria-label="Come interpretare la MAP" title="Come interpretare">i</button>
-                        </div>
+                        <span class="card-unit">mmHg</span>
                     </div>
                     <div class="card-value text-blue" id="metric-map">--</div>
                     <div class="card-footer">
@@ -368,6 +365,6 @@
     <!-- Sidebar Backdrop for Mobile -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>

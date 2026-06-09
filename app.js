@@ -186,13 +186,11 @@ async function loadDataFromSupabase() {
                         map: m.MAP,
                         scto2: m.SctO2,
                         cox: m.COx,
-                        timestamp_s: m.timestampS
+                        timestamp_s: m.timestampS,
+                        recorded_at: m.recordedAt ? new Date(m.recordedAt).toISOString() : null
                     }));
-                    
-                    const { error: measErr } = await supabaseClient
-                        .from('measurements')
-                        .insert(measPayload);
-                        
+
+                    const measErr = await insertMeasurements(measPayload);
                     if (measErr) {
                         console.error(`Errore nella migrazione delle misure per ${id}:`, measErr);
                     }
@@ -237,11 +235,10 @@ async function loadDataFromSupabase() {
                                 map: m.MAP,
                                 scto2: m.SctO2,
                                 cox: m.COx,
-                                timestamp_s: m.timestampS
+                                timestamp_s: m.timestampS,
+                                recorded_at: m.recordedAt ? new Date(m.recordedAt).toISOString() : null
                             }));
-                            const { error: measErr } = await supabaseClient
-                                .from('measurements')
-                                .insert(measPayload);
+                            const measErr = await insertMeasurements(measPayload);
                             if (measErr) {
                                 console.error(`Errore nella migrazione delle misure per ${id}:`, measErr);
                             }
@@ -265,22 +262,7 @@ async function loadDataFromSupabase() {
         
         // 5. Load measurements for the active bed if it has a patient
         if (patients[activeBedId] !== null) {
-            const { data: measData, error: measError } = await supabaseClient
-                .from('measurements')
-                .select('map, scto2, cox, timestamp_s')
-                .eq('bed_id', activeBedId)
-                .order('timestamp_s', { ascending: true });
-                
-            if (measError) throw measError;
-            
-            if (measData) {
-                patients[activeBedId].averages10s = measData.map(m => ({
-                    MAP: m.map,
-                    SctO2: m.scto2,
-                    COx: m.cox,
-                    timestampS: m.timestamp_s
-                }));
-            }
+            patients[activeBedId].averages10s = await fetchMeasurements(activeBedId);
         }
         
         // Sync local storage with merged database state
@@ -298,22 +280,7 @@ async function loadDataFromSupabase() {
 async function loadActiveBedMeasurements() {
     if (!supabaseClient || patients[activeBedId] === null) return;
     try {
-        const { data: measData, error } = await supabaseClient
-            .from('measurements')
-            .select('map, scto2, cox, timestamp_s')
-            .eq('bed_id', activeBedId)
-            .order('timestamp_s', { ascending: true });
-            
-        if (error) throw error;
-        
-        if (measData) {
-            patients[activeBedId].averages10s = measData.map(m => ({
-                MAP: m.map,
-                SctO2: m.scto2,
-                COx: m.cox,
-                timestampS: m.timestamp_s
-            }));
-        }
+        patients[activeBedId].averages10s = await fetchMeasurements(activeBedId);
     } catch (e) {
         console.error("Errore nel caricamento delle misurazioni del letto attivo:", e);
     }
@@ -827,6 +794,52 @@ async function deletePatient(bedId) {
     }
 }
 
+// Formats an epoch-ms timestamp as Italian date + time. Falls back for old rows.
+function formatDateTime(ms) {
+    if (ms === null || ms === undefined) return "n/d";
+    return new Date(ms).toLocaleString("it-IT", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+}
+
+// Inserts measurement rows. If the DB has no recorded_at column, retries without
+// it so map/scto2/cox are still saved (timestamp stays in local storage).
+async function insertMeasurements(rows) {
+    if (!supabaseClient || !rows || rows.length === 0) return null;
+    let { error } = await supabaseClient.from("measurements").insert(rows);
+    if (error && (error.code === "PGRST204" || /recorded_at/.test(error.message || ""))) {
+        const stripped = rows.map(({ recorded_at, ...rest }) => rest);
+        ({ error } = await supabaseClient.from("measurements").insert(stripped));
+    }
+    return error;
+}
+
+// Loads measurements for a bed. Includes recorded_at when the column exists,
+// otherwise retries the base columns so the load never fails over it.
+async function fetchMeasurements(bedId) {
+    let res = await supabaseClient
+        .from("measurements")
+        .select("map, scto2, cox, timestamp_s, recorded_at")
+        .eq("bed_id", bedId)
+        .order("timestamp_s", { ascending: true });
+    if (res.error && (res.error.code === "PGRST204" || res.error.code === "42703" || /recorded_at/.test(res.error.message || ""))) {
+        res = await supabaseClient
+            .from("measurements")
+            .select("map, scto2, cox, timestamp_s")
+            .eq("bed_id", bedId)
+            .order("timestamp_s", { ascending: true });
+    }
+    if (res.error) throw res.error;
+    return (res.data || []).map(m => ({
+        MAP: m.map,
+        SctO2: m.scto2,
+        COx: m.cox,
+        timestampS: m.timestamp_s,
+        recordedAt: m.recorded_at ? new Date(m.recorded_at).getTime() : null
+    }));
+}
+
 // --- Manual Ingestion ---
 async function addManualMeasurement(isMobile = false) {
     const p = patients[activeBedId];
@@ -852,28 +865,29 @@ async function addManualMeasurement(isMobile = false) {
     }
     
     const nextIndex = p.averages10s.length + 1;
+    const recordedAt = Date.now();
     const newAverage = {
         MAP: mapVal,
         SctO2: scto2Val,
         COx: null,
-        timestampS: nextIndex
+        timestampS: nextIndex,
+        recordedAt: recordedAt
     };
-    
+
     p.averages10s.push(newAverage);
     calculateCOxForLastPointOfPatient(p);
     recalculateOptimalMAPForPatient(p);
-    
+
     if (supabaseClient) {
         try {
-            const { error } = await supabaseClient
-                .from('measurements')
-                .insert({
-                    bed_id: activeBedId,
-                    map: mapVal,
-                    scto2: scto2Val,
-                    cox: newAverage.COx,
-                    timestamp_s: nextIndex
-                });
+            const error = await insertMeasurements([{
+                bed_id: activeBedId,
+                map: mapVal,
+                scto2: scto2Val,
+                cox: newAverage.COx,
+                timestamp_s: nextIndex,
+                recorded_at: new Date(recordedAt).toISOString()
+            }]);
             if (error) throw error;
         } catch (e) {
             console.error("Errore nel salvataggio della misura su Supabase:", e);
@@ -1038,14 +1052,15 @@ function exportCSVFile() {
     }
     
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "MAP,SctO2,COx,Index\n";
-    
+    csvContent += "MAP,SctO2,COx,Index,DataOra\n";
+
     p.averages10s.forEach(row => {
         const map = row.MAP.toFixed(2);
         const scto2 = row.SctO2.toFixed(2);
         const cox = row.COx !== null ? row.COx.toFixed(4) : "";
         const time = row.timestampS;
-        csvContent += `${map},${scto2},${cox},${time}\n`;
+        const dt = row.recordedAt ? new Date(row.recordedAt).toISOString() : "";
+        csvContent += `${map},${scto2},${cox},${time},${dt}\n`;
     });
     
     const encodedUri = encodeURI(csvContent);
@@ -1124,7 +1139,16 @@ function initCharts() {
                 }
             },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        title: function(items) {
+                            if (!items.length) return "";
+                            const dt = chartTimeline.$times && chartTimeline.$times[items[0].dataIndex];
+                            return dt ? items[0].label + " — " + dt : items[0].label;
+                        }
+                    }
+                }
             }
         }
     });
@@ -1309,11 +1333,12 @@ function updateChartsData() {
     // 1. Timeline Chart (Last 50 points)
     const displayWindow = p.averages10s.slice(-50);
     const timelineLabels = displayWindow.map(d => `Misura ${d.timestampS}`);
-    
+    chartTimeline.$times = displayWindow.map(d => formatDateTime(d.recordedAt));
+
     const maps = displayWindow.map(d => d.MAP);
     const scto2s = displayWindow.map(d => d.SctO2);
     const optLines = displayWindow.map(() => p.optimalMAP);
-    
+
     chartTimeline.data.labels = timelineLabels;
     chartTimeline.data.datasets[0].data = maps;
     chartTimeline.data.datasets[1].data = scto2s;
