@@ -1,29 +1,41 @@
 /* CSS Reset & Variables */
 :root {
-    --bg-app: #f1f5f9;
-    --bg-sidebar: #ffffff;
-    --bg-card: #ffffff;
-    --border-card: #e2e8f0;
-    --border-card-hover: #cbd5e1;
-    
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-    
-    --color-blue: #0284c7;
-    --color-blue-bg: #f0f9ff;
-    --color-purple: #7c3aed;
-    --color-purple-bg: #f5f3ff;
-    --color-green: #059669;
-    --color-green-bg: #ecfdf5;
-    --color-red: #dc2626;
-    --color-red-bg: #fef2f2;
-    --color-yellow: #d97706;
-    
-    --font-main: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    /* Claude-inspired warm palette */
+    --bg-app: #F0EEE6;
+    --bg-sidebar: #FAF9F5;
+    --bg-card: #FFFFFF;
+    --border-card: #E8E5DC;
+    --border-card-hover: #D8D4C8;
+
+    --text-primary: #1F1E1C;
+    --text-secondary: #4A4742;
+    --text-muted: #87837A;
+
+    /* Brand accent = Claude clay (also drives the MAP/primary UI) */
+    --color-blue: #C96442;
+    --color-blue-bg: #F6ECE7;
+    --color-blue-hover: #B0563A;
+    /* SctO2 = calm dusty blue (kept distinct from clay for data viz) */
+    --color-purple: #6E8FA8;
+    --color-purple-bg: #ECF1F4;
+    /* Clinical zones — muted to match the warm theme but still green/red */
+    --color-green: #5E8C5A;
+    --color-green-bg: #EDF2E9;
+    --color-red: #BC4B41;
+    --color-red-bg: #F8EBE8;
+    --color-yellow: #BE8A3C;
+
+    --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
     --shadow-sm: none;
     --shadow-md: none;
     --shadow-lg: none;
+}
+
+/* Claude editorial serif for display headings */
+h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
 }
 
 * {
@@ -95,7 +107,7 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
-    background: linear-gradient(135deg, #0f172a, #334155);
+    background: linear-gradient(135deg, #C96442, #A84F38);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -196,12 +208,12 @@ body {
 }
 
 .btn-primary {
-    background-color: #2563eb;
+    background-color: var(--color-blue);
     color: #fff;
 }
 
 .btn-primary:hover {
-    background-color: #1d4ed8;
+    background-color: var(--color-blue-hover);
 }
 
 .btn-secondary {
@@ -220,7 +232,7 @@ body {
     width: 100%;
     height: 6px;
     border-radius: 3px;
-    background: #cbd5e1;
+    background: #E0DCD0;
     outline: none;
     margin: 0.5rem 0;
 }
@@ -377,13 +389,13 @@ body {
 
 /* Highlighted Cards Border Colors */
 .metric-card.highlight-green {
-    border-color: rgba(52, 211, 153, 0.2);
-    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(52, 211, 153, 0.02) 100%);
+    border-color: rgba(94, 140, 90, 0.35);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(94, 140, 90, 0.04) 100%);
 }
 
 .metric-card.highlight-red {
-    border-color: rgba(248, 113, 113, 0.2);
-    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(248, 113, 113, 0.02) 100%);
+    border-color: rgba(188, 75, 65, 0.35);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(188, 75, 65, 0.04) 100%);
 }
 
 /* Info button on metric cards */
@@ -833,8 +845,8 @@ body {
     
     .mobile-bed-btn.occupied {
         border-style: solid;
-        border-color: rgba(2, 132, 199, 0.2);
-        background-color: rgba(2, 132, 199, 0.02);
+        border-color: rgba(201, 100, 66, 0.3);
+        background-color: rgba(201, 100, 66, 0.04);
         color: var(--text-primary);
     }
     
@@ -1076,12 +1088,12 @@ body {
 
 /* Scientific Info Panel CSS */
 .info-panel {
-    border: 1px solid rgba(56, 189, 248, 0.15);
-    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(56, 189, 248, 0.01) 100%);
+    border: 1px solid rgba(201, 100, 66, 0.18);
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(201, 100, 66, 0.02) 100%);
 }
 
 .info-panel:hover {
-    border-color: rgba(56, 189, 248, 0.3);
+    border-color: rgba(201, 100, 66, 0.32);
 }
 
 .info-content {
@@ -1321,8 +1333,8 @@ body {
 }
 
 .bed-button.occupied {
-    background-color: rgba(56, 189, 248, 0.05);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background-color: rgba(201, 100, 66, 0.06);
+    border: 1px solid rgba(201, 100, 66, 0.28);
     color: var(--text-primary);
 }
 
@@ -1374,7 +1386,7 @@ body {
 .phenotype-badge.preserved {
     background-color: var(--color-blue-bg);
     color: var(--color-blue);
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(201, 100, 66, 0.25);
 }
 
 .phenotype-badge.disturbed {
@@ -1507,7 +1519,7 @@ body {
     font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.025em;
-    background: linear-gradient(135deg, #0f172a, #334155);
+    background: linear-gradient(135deg, #C96442, #A84F38);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }

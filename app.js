@@ -402,10 +402,12 @@ function recalculateOptimalMAPForPatient(patient) {
         return;
     }
     
-    // Define bins from 50 to 130 in steps of 5 mmHg
+    // Define bins from 30 to 130 in steps of 5 mmHg.
+    // Floor lowered to 30 to cover pediatric/neonatal MAP, otherwise low-MAP
+    // epochs fall outside every bin and are silently dropped from MAPopt.
     const binSize = 5;
     const bins = {};
-    for (let start = 50; start < 130; start += binSize) {
+    for (let start = 30; start < 130; start += binSize) {
         const end = start + binSize;
         bins[`${start}-${end}`] = { sumCOx: 0, count: 0, start, end };
     }
@@ -1083,8 +1085,8 @@ function initCharts() {
                 {
                     label: 'MAP (mmHg)',
                     data: [],
-                    borderColor: '#0284c7',
-                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    borderColor: '#C96442',
+                    backgroundColor: 'rgba(201, 100, 66, 0.10)',
                     borderWidth: 2,
                     yAxisID: 'yMAP',
                     pointRadius: 3
@@ -1092,8 +1094,8 @@ function initCharts() {
                 {
                     label: 'SctO2 (%)',
                     data: [],
-                    borderColor: '#7c3aed',
-                    backgroundColor: 'rgba(124, 58, 237, 0.05)',
+                    borderColor: '#6E8FA8',
+                    backgroundColor: 'rgba(110, 143, 168, 0.08)',
                     borderWidth: 2,
                     yAxisID: 'ySctO2',
                     pointRadius: 3
@@ -1101,7 +1103,7 @@ function initCharts() {
                 {
                     label: 'MAP Ottimale (mmHg)',
                     data: [],
-                    borderColor: '#059669',
+                    borderColor: '#5E8C5A',
                     borderWidth: 2,
                     borderDash: [5, 5],
                     fill: false,
@@ -1122,11 +1124,11 @@ function initCharts() {
                 yMAP: {
                     type: 'linear',
                     position: 'left',
-                    min: 40,
+                    min: 25,
                     max: 130,
                     grid: { color: 'rgba(148, 163, 184, 0.12)' },
-                    ticks: { color: '#0284c7' },
-                    title: { display: true, text: 'MAP (mmHg)', color: '#0284c7', font: { weight: 'bold' } }
+                    ticks: { color: '#C96442' },
+                    title: { display: true, text: 'MAP (mmHg)', color: '#C96442', font: { weight: 'bold' } }
                 },
                 ySctO2: {
                     type: 'linear',
@@ -1134,8 +1136,8 @@ function initCharts() {
                     min: 30,
                     max: 95,
                     grid: { drawOnChartArea: false },
-                    ticks: { color: '#7c3aed' },
-                    title: { display: true, text: 'SctO2 (%)', color: '#7c3aed', font: { weight: 'bold' } }
+                    ticks: { color: '#6E8FA8' },
+                    title: { display: true, text: 'SctO2 (%)', color: '#6E8FA8', font: { weight: 'bold' } }
                 }
             },
             plugins: {
@@ -1161,13 +1163,13 @@ function initCharts() {
                 {
                     label: 'Misurazioni',
                     data: [],
-                    backgroundColor: 'rgba(71, 85, 105, 0.25)',
+                    backgroundColor: 'rgba(135, 131, 122, 0.30)',
                     pointRadius: 4
                 },
                 {
                     label: 'Trend Autoregolativo',
                     data: [],
-                    borderColor: '#dc2626',
+                    borderColor: '#BC4B41',
                     borderWidth: 2,
                     type: 'line',
                     pointRadius: 0,
@@ -1181,7 +1183,7 @@ function initCharts() {
             animation: { duration: 0 },
             scales: {
                 x: {
-                    min: 45,
+                    min: 25,
                     max: 125,
                     title: { display: true, text: 'MAP (mmHg)', color: '#475569' },
                     grid: { color: 'rgba(148, 163, 184, 0.12)' },
@@ -1209,7 +1211,7 @@ function initCharts() {
             datasets: [{
                 data: [],
                 backgroundColor: [],
-                borderColor: 'rgba(15, 23, 42, 0.8)',
+                borderColor: 'rgba(31, 30, 28, 0.65)',
                 borderWidth: 1
             }]
         },
@@ -1391,13 +1393,13 @@ function updateChartsData() {
             data.push(item.avgCOx !== null ? item.avgCOx : 0);
             
             if (item.key === p.optimalBin) {
-                bgColors.push('#059669'); // Optimal MAP bin (Green)
+                bgColors.push('#5E8C5A'); // Optimal MAP bin (sage green)
             } else if (item.percentage < 1.0) {
-                bgColors.push('rgba(148, 163, 184, 0.2)'); // Excluded bins (<1% data)
+                bgColors.push('rgba(135, 131, 122, 0.25)'); // Excluded bins (<1% data)
             } else if (item.avgCOx !== null && item.avgCOx < COX_IMPAIRED_THRESHOLD) {
-                bgColors.push('#0284c7'); // Active zone (blue)
+                bgColors.push('#6E8FA8'); // Active zone (dusty blue = autoregulation OK)
             } else {
-                bgColors.push('#dc2626'); // Passive zone (red)
+                bgColors.push('#BC4B41'); // Passive zone (brick red = impaired)
             }
         });
         
@@ -1445,7 +1447,7 @@ const METRIC_INFO = {
         title: "MAP — Pressione Arteriosa Media",
         body: `
             <p><strong>Cos'è.</strong> Pressione media nelle arterie durante il ciclo cardiaco. È il motore che spinge sangue e ossigeno verso il cervello.</p>
-            <p><strong>Come leggerla.</strong> Le linee guida ERC-ESICM 2021 indicano di mantenere una MAP <strong>&gt; 65 mmHg</strong> dopo l'arresto cardiaco. È un minimo generico: il bersaglio realmente utile per <em>questo</em> paziente è la <strong>MAP Ottimale</strong> calcolata nella card accanto.</p>
+            <p><strong>Come leggerla.</strong> La soglia ERC-ESICM 2021 di <strong>MAP &gt; 65 mmHg</strong> vale per l'<em>adulto</em> dopo arresto cardiaco. <strong>In età pediatrica e neonatale il target è età-dipendente e molto più basso</strong> (es. neonato ~40–50 mmHg), quindi non usare il 65 come riferimento nel bambino. Il bersaglio utile per <em>questo</em> paziente è la <strong>MAP Ottimale</strong> calcolata nella card accanto, che è individuale e indipendente dall'età.</p>
             <p><strong>Confronto chiave.</strong></p>
             <ul>
                 <li>MAP ≥ MAP Ottimale → perfusione cerebrale verosimilmente adeguata.</li>
@@ -1470,14 +1472,14 @@ const METRIC_INFO = {
                 <li><span style="color:#059669;font-weight:600;">COx &lt; 0.3 (verde)</span> → autoregolazione <strong>attiva</strong>: i vasi cerebrali compensano le oscillazioni pressorie, l'ossigenazione resta stabile.</li>
                 <li><span style="color:#dc2626;font-weight:600;">COx ≥ 0.3 (rosso)</span> → relazione <strong>pressione-passiva</strong>: autoregolazione persa, la SctO₂ segue la MAP. Ogni calo pressorio fa calare l'ossigeno cerebrale.</li>
             </ul>
-            <p><strong>Soglia.</strong> Il cut-off 0.3 deriva dalla validazione sperimentale di Brady et al. (Stroke 2007). Servono almeno 5 minuti di dati continui per il primo calcolo.</p>
+            <p><strong>Soglia.</strong> Il cut-off 0.3 deriva dalla validazione sperimentale di Brady et al. (Stroke 2007), condotta su modello animale neonatale. Essendo il COx una correlazione adimensionale (non una pressione assoluta), la soglia non è specifica per l'adulto e resta applicabile anche in pediatria. Servono almeno 5 minuti di dati continui per il primo calcolo.</p>
         `
     },
     optmap: {
         title: "MAP Ottimale (MAPopt)",
         body: `
             <p><strong>Cos'è.</strong> La pressione a cui l'autoregolazione di <em>questo</em> paziente lavora meglio. Si ottiene raggruppando i valori di COx in bin di MAP da 5 mmHg e scegliendo il bin con COx medio più negativo.</p>
-            <p><strong>Come usarla.</strong> È il target pressorio <strong>personalizzato</strong>, da affiancare (non sostituire) al minimo di 65 mmHg delle linee guida. Il "±" indica l'ampiezza del bin di pressione, non un errore di misura.</p>
+            <p><strong>Come usarla.</strong> È il target pressorio <strong>personalizzato</strong> di questo paziente, ricavato dai suoi stessi dati: per costruzione è indipendente dall'età e quindi valido anche in pediatria/neonatologia. Nel bambino affiancala al target età-specifico, non al minimo adulto di 65 mmHg. Il "±" indica l'ampiezza del bin di pressione, non un errore di misura.</p>
             <p><strong>Affidabilità.</strong> Richiede dati sufficienti e distribuiti su più livelli di MAP. È un metodo <em>generatore di ipotesi</em>: gli RCT (Neuroprotect, COMACARE) non hanno dimostrato un beneficio di sopravvivenza nel forzare MAP più alte. Usala come guida, non come ordine.</p>
         `
     },
