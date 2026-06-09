@@ -45,6 +45,7 @@ def calculate_cox(map_data, scto2_data, sampling_interval_s=2):
     # A 5-minute window has 300 seconds. With 10s samples, this is a window of 30 samples.
     window_size = 30
     df_10s['COx'] = df_10s['SctO2'].rolling(window=window_size, min_periods=window_size).corr(df_10s['MAP'])
+    df_10s['MAP_mean_5min'] = df_10s['MAP'].rolling(window=window_size, min_periods=window_size).mean()
     
     return df_10s
 
@@ -70,8 +71,9 @@ def find_optimal_map(df_10s):
     bin_edges = np.arange(50, 131, 5)
     bin_labels = [f"{bin_edges[i]}-{bin_edges[i+1]}" for i in range(len(bin_edges)-1)]
     
-    # Bin the data using the MAP values
-    valid_data['MAP_bin'] = pd.cut(valid_data['MAP'], bins=bin_edges, labels=bin_labels, right=False)
+    # Bin the data using the MAP values (5-minute rolling average MAP is preferred if available)
+    map_col = 'MAP_mean_5min' if 'MAP_mean_5min' in valid_data.columns else 'MAP'
+    valid_data['MAP_bin'] = pd.cut(valid_data[map_col], bins=bin_edges, labels=bin_labels, right=False)
     
     # Group by bin and calculate average COx and percentage of data
     grouped = valid_data.groupby('MAP_bin', observed=False).agg(

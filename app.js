@@ -375,48 +375,49 @@ function pearsonCorrelation(x, y) {
     return num / den;
 }
 
-// Recalculates rolling COx for the entire dataset of a patient
+// Recalculates rolling COx and MAP_mean_5min for the entire dataset of a patient
 function calculateAllCOx(patient) {
     const data = patient.averages10s;
     const len = data.length;
-    const minCorrelationPoints = 5; // Minimum points to calculate correlation
+    const windowSize = 30; // 5 minutes (30 samples of 10s averages)
     
     for (let i = 0; i < len; i++) {
-        if (i >= minCorrelationPoints - 1) {
-            // Dynamic window size from minCorrelationPoints up to 30
-            const currentWindow = Math.min(30, i + 1);
-            const windowData = data.slice(i - currentWindow + 1, i + 1);
+        if (i >= windowSize - 1) {
+            const windowData = data.slice(i - windowSize + 1, i + 1);
             const maps = windowData.map(d => d.MAP);
             const scto2s = windowData.map(d => d.SctO2);
             data[i].COx = pearsonCorrelation(maps, scto2s);
+            data[i].MAP_mean_5min = maps.reduce((a, b) => a + b, 0) / windowSize;
         } else {
             data[i].COx = null;
+            data[i].MAP_mean_5min = null;
         }
     }
 }
 
-// Calculates rolling COx index for the latest point in averages10s
+// Calculates rolling COx index and MAP_mean_5min for the latest point in averages10s
 function calculateCOxForLastPointOfPatient(patient) {
     const len = patient.averages10s.length;
     const data = patient.averages10s;
     const newAverage = data[len - 1];
-    const minCorrelationPoints = 5;
+    const windowSize = 30; // 5 minutes
     
-    if (len >= minCorrelationPoints) {
-        const windowSize = Math.min(30, len);
+    if (len >= windowSize) {
         const windowData = data.slice(len - windowSize);
         const maps = windowData.map(d => d.MAP);
         const scto2s = windowData.map(d => d.SctO2);
         newAverage.COx = pearsonCorrelation(maps, scto2s);
+        newAverage.MAP_mean_5min = maps.reduce((a, b) => a + b, 0) / windowSize;
     } else {
         newAverage.COx = null;
+        newAverage.MAP_mean_5min = null;
     }
 }
 
 // Recalculates MAP bins and identifies optimal MAP
 function recalculateOptimalMAPForPatient(patient) {
     const data = patient.averages10s;
-    const validEpochs = data.filter(d => d.COx !== null);
+    const validEpochs = data.filter(d => d.COx !== null && d.MAP_mean_5min !== null && d.MAP_mean_5min !== undefined);
     const totalValid = validEpochs.length;
     
     if (totalValid === 0) {
@@ -439,7 +440,7 @@ function recalculateOptimalMAPForPatient(patient) {
     }
     
     validEpochs.forEach(epoch => {
-        const map = epoch.MAP;
+        const map = epoch.MAP_mean_5min;
         for (const key in bins) {
             const b = bins[key];
             if (map >= b.start && map < b.end) {
@@ -477,12 +478,12 @@ function recalculateOptimalMAPForPatient(patient) {
         }
     }
     
-    // Fallback if no bin satisfies 1% data filter
+    // Fallback if no bin satisfies 1% data filter: find populated bin with most negative average COx (instead of maxCount)
     if (bestBinKey === null) {
-        let maxCount = -1;
+        let minFallbackCOx = Infinity;
         for (const item of binSummary) {
-            if (item.count > maxCount && item.avgCOx !== null) {
-                maxCount = item.count;
+            if (item.count > 0 && item.avgCOx !== null && item.avgCOx < minFallbackCOx) {
+                minFallbackCOx = item.avgCOx;
                 bestBinKey = item.key;
             }
         }
@@ -696,6 +697,7 @@ function loadActivePatient() {
         const count = p.averages10s.length;
         recordCountLabel.textContent = `Misure: ${count}`;
         
+        calculateAllCOx(p);
         recalculateOptimalMAPForPatient(p);
         
         if (count > 0) {
@@ -1240,7 +1242,7 @@ function updateMetricsUI(map, scto2, forceEmpty = false) {
         }
     } else {
         document.getElementById("metric-cox").textContent = "Calcolo...";
-        document.getElementById("metric-cox-desc").textContent = `Inseriti ${count}/5 punti...`;
+        document.getElementById("metric-cox-desc").textContent = `Inseriti ${count}/30 punti...`;
     }
     
     const optMapCard = document.getElementById("metric-optmap");
