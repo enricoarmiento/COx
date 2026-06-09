@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "style.css", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "patient_*.csv", "use": "@vercel/static" },
+    { "src": "patient_*.png", "use": "@vercel/static" },
+    { "src": "template_patient_data.csv", "use": "@vercel/static" },
+    { "src": "cox paper.pdf", "use": "@vercel/static" }
+  ]
+}
