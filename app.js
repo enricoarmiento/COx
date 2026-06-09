@@ -65,6 +65,10 @@ async function loadDataFromSupabase() {
     }
     
     try {
+        // 1. Load local data first to merge it
+        loadFromLocalStorage();
+        
+        // 2. Query Supabase beds
         const { data: bedsData, error: bedsError } = await supabaseClient
             .from('beds')
             .select('id, patient_name, patient_surname')
@@ -72,51 +76,12 @@ async function loadDataFromSupabase() {
             
         if (bedsError) throw bedsError;
         
-        if (bedsData && bedsData.length > 0) {
-            Object.keys(patients).forEach(k => {
-                patients[k] = null;
-            });
-            
-            bedsData.forEach(bed => {
-                if (bed.patient_name || bed.patient_surname) {
-                    patients[bed.id] = {
-                        name: bed.patient_name || "",
-                        surname: bed.patient_surname || "",
-                        averages10s: []
-                    };
-                }
-            });
-            
-            if (patients[activeBedId] !== null) {
-                const { data: measData, error: measError } = await supabaseClient
-                    .from('measurements')
-                    .select('map, scto2, cox, timestamp_s')
-                    .eq('bed_id', activeBedId)
-                    .order('timestamp_s', { ascending: true });
-                    
-                if (measError) throw measError;
-                
-                if (measData) {
-                    patients[activeBedId].averages10s = measData.map(m => ({
-                        MAP: m.map,
-                        SctO2: m.scto2,
-                        COx: m.cox,
-                        timestampS: m.timestamp_s
-                    }));
-                }
-            }
-            
-            renderBedsGrid();
-            loadActivePatient();
-        } else {
-            // Table is empty! Let's seed the 6 beds and migrate any local data
+        const defaultBeds = ['letto_1', 'letto_2', 'letto_3', 'letto_4', 'letto_5', 'letto_6'];
+        
+        if (!bedsData || bedsData.length === 0) {
+            // DB is completely unseeded. Let's seed beds and upload local data.
             console.log("Database beds table is empty. Seeding beds and migrating local data...");
             
-            // 1. Load from local storage
-            loadFromLocalStorage();
-            
-            // 2. Prepare beds payload
-            const defaultBeds = ['letto_1', 'letto_2', 'letto_3', 'letto_4', 'letto_5', 'letto_6'];
             const bedsPayload = defaultBeds.map(id => {
                 const localPat = patients[id];
                 return {
@@ -126,14 +91,13 @@ async function loadDataFromSupabase() {
                 };
             });
             
-            // 3. Seed beds table
             const { error: seedError } = await supabaseClient
                 .from('beds')
                 .insert(bedsPayload);
                 
             if (seedError) throw seedError;
             
-            // 4. Seed measurements table for any patient found locally
+            // Upload local measurements
             for (const id of defaultBeds) {
                 const localPat = patients[id];
                 if (localPat && localPat.averages10s && localPat.averages10s.length > 0) {
@@ -154,11 +118,95 @@ async function loadDataFromSupabase() {
                     }
                 }
             }
+        } else {
+            // DB has beds. Let's merge local data with DB.
+            console.log("Database beds table is initialized. Merging local data with DB...");
             
-            console.log("Seeding and migration completed successfully.");
-            renderBedsGrid();
-            loadActivePatient();
+            // Map DB beds by ID for easy lookup
+            const dbBedsMap = {};
+            bedsData.forEach(b => {
+                dbBedsMap[b.id] = b;
+            });
+            
+            for (const id of defaultBeds) {
+                const dbBed = dbBedsMap[id];
+                const localPat = patients[id];
+                
+                if (dbBed) {
+                    if (dbBed.patient_name || dbBed.patient_surname) {
+                        // DB is the source of truth if it has a patient
+                        patients[id] = {
+                            name: dbBed.patient_name || "",
+                            surname: dbBed.patient_surname || "",
+                            averages10s: [] // Will load measurements below if it's activeBedId
+                        };
+                    } else if (localPat) {
+                        // DB has NO patient, but local has patient. Let's upload to DB!
+                        console.log(`Uploading local patient for ${id} to Supabase...`);
+                        const { error: updErr } = await supabaseClient
+                            .from('beds')
+                            .update({ patient_name: localPat.name, patient_surname: localPat.surname })
+                            .eq('id', id);
+                            
+                        if (updErr) throw updErr;
+                            
+                        // Also upload their local measurements
+                        if (localPat.averages10s && localPat.averages10s.length > 0) {
+                            const measPayload = localPat.averages10s.map(m => ({
+                                bed_id: id,
+                                map: m.MAP,
+                                scto2: m.SctO2,
+                                cox: m.COx,
+                                timestamp_s: m.timestampS
+                            }));
+                            const { error: measErr } = await supabaseClient
+                                .from('measurements')
+                                .insert(measPayload);
+                            if (measErr) {
+                                console.error(`Errore nella migrazione delle misure per ${id}:`, measErr);
+                            }
+                        }
+                    } else {
+                        patients[id] = null;
+                    }
+                } else {
+                    // Bed row missing from DB? Let's upsert it
+                    const { error: upsErr } = await supabaseClient
+                        .from('beds')
+                        .upsert({
+                            id: id,
+                            patient_name: localPat ? localPat.name : null,
+                            patient_surname: localPat ? localPat.surname : null
+                        });
+                    if (upsErr) throw upsErr;
+                }
+            }
         }
+        
+        // 5. Load measurements for the active bed if it has a patient
+        if (patients[activeBedId] !== null) {
+            const { data: measData, error: measError } = await supabaseClient
+                .from('measurements')
+                .select('map, scto2, cox, timestamp_s')
+                .eq('bed_id', activeBedId)
+                .order('timestamp_s', { ascending: true });
+                
+            if (measError) throw measError;
+            
+            if (measData) {
+                patients[activeBedId].averages10s = measData.map(m => ({
+                    MAP: m.map,
+                    SctO2: m.scto2,
+                    COx: m.cox,
+                    timestampS: m.timestamp_s
+                }));
+            }
+        }
+        
+        // Sync local storage with merged database state
+        saveToLocalStorage();
+        renderBedsGrid();
+        loadActivePatient();
     } catch (e) {
         console.error("Errore durante il caricamento da Supabase:", e);
         loadFromLocalStorage();
