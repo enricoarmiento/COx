@@ -34,11 +34,87 @@ let chartTimeline = null;
 let chartScatter = null;
 let chartBins = null;
 
+// --- Authentication State Management ---
+function checkAuthStatus() {
+    try {
+        return localStorage.getItem("cox_auth_status_v1") === "authenticated";
+    } catch (e) {
+        return false;
+    }
+}
+
+function showLoginScreen() {
+    const loginOverlay = document.getElementById("login-screen");
+    if (loginOverlay) {
+        loginOverlay.style.display = "flex";
+    }
+    // Bind Enter key to inputs
+    const userInput = document.getElementById("login-username");
+    const passInput = document.getElementById("login-password");
+    const triggerLoginOnEnter = (e) => {
+        if (e.key === "Enter") {
+            handleLogin();
+        }
+    };
+    if (userInput) userInput.addEventListener("keypress", triggerLoginOnEnter);
+    if (passInput) passInput.addEventListener("keypress", triggerLoginOnEnter);
+}
+
+function hideLoginScreen() {
+    const loginOverlay = document.getElementById("login-screen");
+    if (loginOverlay) {
+        loginOverlay.style.display = "none";
+    }
+}
+
+async function handleLogin() {
+    const usernameInput = document.getElementById("login-username");
+    const passwordInput = document.getElementById("login-password");
+    const errorMsg = document.getElementById("login-error-msg");
+    
+    const username = usernameInput ? usernameInput.value.trim() : "";
+    const password = passwordInput ? passwordInput.value : "";
+    
+    if (username === "aropbg" && password === "aropbg") {
+        try {
+            localStorage.setItem("cox_auth_status_v1", "authenticated");
+        } catch (e) {}
+        
+        if (errorMsg) errorMsg.style.display = "none";
+        hideLoginScreen();
+        await loadDataFromSupabase();
+    } else {
+        if (errorMsg) {
+            errorMsg.style.display = "block";
+            // Restart shake animation
+            errorMsg.style.animation = "none";
+            errorMsg.offsetHeight; // trigger reflow
+            errorMsg.style.animation = "shake 0.2s ease-in-out 0s 2";
+        }
+        if (passwordInput) passwordInput.value = "";
+    }
+}
+
+function handleLogout() {
+    if (confirm("Vuoi disconnetterti dalla piattaforma?")) {
+        try {
+            localStorage.removeItem("cox_auth_status_v1");
+        } catch (e) {}
+        location.reload();
+    }
+}
+
 // --- Initialize App ---
 document.addEventListener("DOMContentLoaded", async () => {
     initCharts();
     loadActiveBedIdFromLocalStorage();
-    await loadDataFromSupabase();
+    
+    if (checkAuthStatus()) {
+        hideLoginScreen();
+        await loadDataFromSupabase();
+    } else {
+        showLoginScreen();
+    }
 });
 
 function loadActiveBedIdFromLocalStorage() {

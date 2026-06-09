@@ -15,6 +15,40 @@
     <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
+    <!-- Login Screen Overlay -->
+    <div id="login-screen" class="login-overlay">
+        <div class="login-card">
+            <div class="login-header">
+                <span class="pulse-dot"></span>
+                <h2>COx Live</h2>
+            </div>
+            <p class="login-subtitle">Accesso Riservato Personale Clinico</p>
+            
+            <div class="login-form">
+                <div class="form-group">
+                    <label class="form-label" for="login-username">Username</label>
+                    <input type="text" id="login-username" class="text-input-full" placeholder="aropbg" autocomplete="username">
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" class="text-input-full" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                
+                <div id="login-error-msg" class="login-error" style="display: none;">
+                    Credenziali non valide. Riprova.
+                </div>
+                
+                <button class="btn-primary" onclick="handleLogin()" style="width: 100%; justify-content: center; padding: 0.85rem; font-weight: 600;">
+                    Accedi
+                </button>
+            </div>
+            
+            <div class="login-footer">
+                Dispositivo Medico Diagnostico In Vitro (COx)
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <!-- Sidebar Controls -->
         <aside class="sidebar" id="sidebar">
@@ -62,6 +96,9 @@
             <hr class="divider">
 
             <div class="sidebar-footer">
+                <button class="btn-secondary" onclick="handleLogout()" style="width: 100%; margin-bottom: 1rem; font-size: 0.8rem; padding: 0.5rem; justify-content: center; gap: 0.35rem; border-color: rgba(220, 38, 38, 0.2); color: var(--color-red);">
+                    <span>🚪</span> Disconnetti
+                </button>
                 <p>Basato su Ameloot et al. 2015</p>
                 <p>Resuscitation Journal</p>
             </div>
@@ -70,8 +107,9 @@
         <!-- Main Dashboard Content -->
         <main class="dashboard-main">
             <!-- Mobile Navigation Header -->
-            <div class="mobile-nav">
-                <span class="mobile-logo">COx Live - Autoregolazione</span>
+            <div class="mobile-nav" style="justify-content: space-between; padding: 0.75rem 1rem;">
+                <span class="mobile-logo">COx Live</span>
+                <button onclick="handleLogout()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 2px; display: flex; align-items: center;" title="Disconnetti">🚪</button>
             </div>
 
             <!-- Mobile Bed Switcher Row -->

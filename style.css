@@ -1343,5 +1343,93 @@ body {
     box-shadow: 0 0 0 2px var(--color-blue-bg);
 }
 
+/* Login Screen Styles */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* Ensure it is above everything, including modals */
+    animation: fadeIn 0.3s ease-out;
+}
+
+.login-card {
+    background-color: #ffffff;
+    border: 1px solid var(--border-card-hover);
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    padding: 2.5rem 2rem;
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.login-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.login-header h2 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.login-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 500;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-error {
+    background-color: var(--color-red-bg);
+    border: 1px solid var(--color-red);
+    color: var(--color-red);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    text-align: center;
+    animation: shake 0.2s ease-in-out 0s 2;
+}
+
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+    100% { transform: translateX(0); }
+}
+
+.login-footer {
+    margin-top: 2rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 500;
+}
+
 
 
