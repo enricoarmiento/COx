@@ -538,10 +538,10 @@ function loadActivePatient() {
                 <div class="mobile-ingestion-form">
                     <h4>Inserimento Rapido Letto ${activeBedId.replace("letto_", "")}</h4>
                     <div class="manual-input-row">
-                        <input type="number" id="input-map-mobile" class="text-input" placeholder="MAP (mmHg)" min="30" max="180">
-                        <input type="number" id="input-scto2-mobile" class="text-input" placeholder="SctO2 (%)" min="10" max="100">
-                        <button class="btn-primary" onclick="addManualMeasurement(true)">Aggiungi</button>
+                        <input type="number" id="input-map-mobile" class="text-input" placeholder="MAP" min="30" max="180" style="flex: 1; width: auto;">
+                        <input type="number" id="input-scto2-mobile" class="text-input" placeholder="SctO2" min="10" max="100" style="flex: 1; width: auto;">
                     </div>
+                    <button class="btn-primary" onclick="addManualMeasurement(true)" style="margin-top: 0.5rem; width: 100%;">Aggiungi Misura</button>
                 </div>
             `;
         }
